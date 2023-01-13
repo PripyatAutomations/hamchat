@@ -1,0 +1,46 @@
+[general]
+core.daemonize=false
+;core.daemonize=true
+core.servername=irc.hamchat.local
+path.db_main=etc/hamchat.db
+path.db_main_schema=etc/hamchat.sql
+path.logfile=hamchat.log
+path.motd=etc/hamchat.motd
+path.pidfile=hamchat.pid
+path.statsfile=etc/hamchat.stats
+path.db_chandir=etc/channels/
+path.db_userdir=etc/users/
+heartbeat.delay=60
+heartbeat.interval=600
+station.callsign=N0CALL
+station.gridsquare=AA00aa
+station.default_txpower=5
+admin.line1=Middle of Nowhere, No State, United States
+admin.line2=This server is an experimental instance of hamchat
+admin.line3=Please report bugs.
+
+[listen]
+10.11.0.3:6660
+127.0.0.1:6660
+
+[radio0]
+driver=hamlib
+description=Yaesu FT-891 connected to LDG RT-100 and 40/10m fan dipole
+; 2 (RIG_MODEL_NETRIGCTL) for rigctld, 4 (RIG_MODEL_FLRIG) for flrig, otherwise see rigctl -l
+model=2
+; enabled must be last option in section, sorry.
+enabled=true
+
+#[radio0]
+#description=simple transceiver without CAT controls
+#mode=serial-ptt
+#port=/dev/ttyUSB0
+#port_mode=8N1
+#port_rate=38400
+#pin is DTR or RTS
+#port_pin=RTS
+
+[ardop]
+allow_arq=false
+allow_fec=true
+max_baudrate=300

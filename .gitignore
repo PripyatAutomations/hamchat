@@ -1,32 +1,20 @@
-# Prerequisites
-*.d
+# user data
+etc/hamchat.cf
+etc/*.db
+etc/channels/*.db
+etc/users/*.db
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# built binary
+hamchat
 
-# Precompiled Headers
-*.gch
-*.pch
+# Run time products
+hamchat.pid
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# built modules and intermediate files
+modules/*
 
-# Fortran module files
-*.mod
-*.smod
+# built intermediate files
+obj/*
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+# log files
+*.log

@@ -1,0 +1,2 @@
+#!/bin/bash
+(nc -lkv 127.0.0.1 6667 -c 'tee /dev/stderr | ncat -v $1 6667 | tee /dev/stderr') 2>&1 | tee $2

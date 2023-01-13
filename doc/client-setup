@@ -1,0 +1,4 @@
+To make this work you might should setup your client as such:
+	nick	YourCallSign
+	altnick	YourCallSign_1
+	auto join #RIG-radioX for each radio you want

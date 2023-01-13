@@ -1,0 +1,20 @@
+This folder contains various loadable modules' source.
+
+You can disable a module by adding a noload line in hamchat.cf
+
+Example: Disable inviting users to channels
+	[modules]
+	noload irc_invite.so
+
+Transport Status
+----------------
+	ardop:	In progress
+	ax25: Someday?
+	kiss: Someday?
+	tcp: In progress
+
+Rig Control Status
+----------------
+	hamlib: In progress
+	flrig: Someday?
+	serial_ptt: In progress

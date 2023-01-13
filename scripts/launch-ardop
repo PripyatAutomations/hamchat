@@ -1,0 +1,6 @@
+#!/bin/bash
+
+./ext/ARDOPOFDM/ardopofdm &
+ARDOP_PID=$$
+
+echo "${ARDOP_PID}" > ardop.pid

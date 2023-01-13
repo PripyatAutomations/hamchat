@@ -1,0 +1,8 @@
+*** LOGTAIL channels - use inotify or such to show new lines in file(s) to a channel
+
+* Integrate libev better, we do a lot of stuff it can do for us (signals and such)
+* Implement more of this mess.
+* Find bugs and remove them
+	- heartbeat needs to occur at top of the window for time-slot based (ft8, etc) protocols
+	- switchable tx windows for various transports
+* Create our own RF transport

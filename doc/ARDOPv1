@@ -1,0 +1,108 @@
+ARQBW		200MAX | 500MAX | 1000MAX | 2000MAX | 500FORCED | 1000FORCED | 2000FORCED
+	Set ARQ bandwidth
+
+AUTOBREAK	False | True
+	Auto link turnover (def: true)
+
+BREAK
+	Not required in auto
+
+BUFFER
+	Get current buffer size in bytes
+
+BUSYLOCK	False | True
+	Prevents TXing on busy channel (default false)
+
+CAPTURE		<sound device>
+	Select capture device
+
+CAPTUREDEVICES
+	returns CSV of all available capture devices
+
+CLOSE
+	shutdown ardop
+
+CODEC		False | True
+	Starts/stops codec
+
+CONNECT		remotecall,bwidth
+	Connect to ARQ
+
+CWID		False | True
+	Set CWID option
+
+DATATOSEND
+	0 to reset | empty to read bytes pending send
+
+DEBUGLOG	False | True
+	Set debugging log
+
+DIRTYDISCONNECT
+	Initiate IMMEDIATE disconnect
+
+DRIVELEVEL	0-100
+	Set drive level (default 100)
+
+FECID		False | True
+	ID with gridsquare at beginning of FEC transmissions
+
+FECMODE		4FSK.200.50S|4FSK.200.50|4PSK.200.100S
+		4PSK.200.100|8PSK.200.100|4FSK.500.100S
+		4FSK.500.100|4PSK.500.100|8PSK.500.100
+		4PSK.500.167|8PSK.500.167|4FSK.1000.100
+		4PSK.1000.100|8PSK.1000.100|4PSK.1000.167
+		8PSK.1000.167|4FSK.2000.100|4PSK.2000.100
+		8PSK.2000.100|4PSK.2000.167|8PSK.2000.167
+	Set FEC mode
+
+FECSEND		False | True
+	Start/stop FEC broadcast (multicast) mode
+
+FECREPEATS	-05
+	Sets the number of times frame must be repeated.
+
+GRIDSQUARE	4|6 digit maidenhead
+
+LEADER		100-2000
+		get/set leader length in ms (def 160, round to 10ms)
+
+LISTEN		False | true
+	Enable/disable respond to ARC connect requests (default true)
+
+MAXCONREQ	2-15
+	Get/set the limit of connect request cycles (default 10/~25sec)
+
+MYAUX		<up to ten comma separated AUX callsigns>
+	Set up to 10 comma separated AUX callsigns to answer to
+
+MYCALL		CALLSIGN
+	Set call sign
+
+OVER
+	Goes into idle mode
+
+PLAYBACK	<device>
+	Sets desired playback device. If no device, reply with available devs
+
+PLAYBACKDEVICES
+	Get a list of available playback devices
+
+SENDID		<delay in seconds> 0-15
+	This will send ID frame and if CWID enabled, also CWID
+
+SQUELCH		<1-10>
+	Return or set the squelch (default 5)
+
+STATE
+	Get the state of ARDOP protocol
+	OFFLINE | DISC | ISS | IRS | FECSend | FECRcv
+
+SUFFIX		CWID suffix
+	Sets optional suffix for CWID
+
+TWOTONETEST
+	Send 5 second two-tone burst at normal amplitude
+	Send from DISC state only
+
+VERSION
+	Reads the version of the TNC

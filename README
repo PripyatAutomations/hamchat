@@ -1,0 +1,48 @@
+What's this?
+------------
+hamchat is a small IRC server which acts as a frontend for 
+controlling radios and running digital modes.
+
+Your local instance will keep state, etc for your IRC client and
+will manage periodically sending messages to the network.
+
+Lots of things are yet to be implemented, please see the 
+src/ directory and the files in it to get an idea of the
+status of various parts of this project. Feel free to contribute
+where you can.
+
+Building
+--------
+- If needed, install dependancies
+	sudo make build-deps
+- Build it
+	make world
+- Configure it
+	$EDITOR etc/hamchat.cf
+- Run it
+	./hamchat
+- Connect to it from your irc client
+	/connect localhost 6660
+- Debug it
+	make gdb
+
+
+SIGNALS
+-------
+	SIGHUP	- Reload configuration
+	SIGUSR1	- Dump database to disk
+	SIGUSR2	- Dump statistics to disk
+
+
+BUGS
+-----
+There's probably plenty. I've put a few evenings into this...
+The better your bug report, the faster I can fix it!
+
+This thing is thrown together as quickly as possible to get it running
+while leaving some hope of future cleanup. Dive in, fix stuff!
+
+
+Why?
+----
+Because we kept joking about it... So it becomes a thing...
