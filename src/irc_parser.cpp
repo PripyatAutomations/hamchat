@@ -159,6 +159,7 @@ bool Client::Parse(void) {
 
             // throw an error if too many arguments (this is a parser bug.. let's see if it even matters?)
             if ((parc - 1) > cp->max_args) {
+               // XXX: Is there a numeric for this?
                Log->Crit("<%d> too many parameters (%d > %d) for cmd %s in parser", this->sock->fd, parc, cp->max_args, cp->cmd_proto);
                valid_cmd = false;
                break;
