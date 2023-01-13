@@ -23,18 +23,15 @@ Heartbeat::~Heartbeat() {
 
 bool Heartbeat::Send(void) {
    // Check if PTT is disabled first...
-   // fire off heartbeat messages
    // XXX: We need to get query this from rigctl
+   // fire off heartbeat messages
    if (this->buf[0] == '\0') {
       size_t buf_sz = sizeof(this->buf);
       memset(this->buf, 0, buf_sz);
       snprintf(this->buf, buf_sz, "%s@%s/%dW",cfg->Get("station.callsign", "N0CALL"), cfg->Get("station.gridsquare", "FN20"), cfg->GetInt("station.default_txpower", 5));
    }
 
-//   this->*packet = modem_construct_packet(
-//   rigctl_hamlib->SetPTT(true);
    Log->Debug("Sending heartbeat: %s...", this->buf);
 
-//   rigctl_hamlib->SetPTT(false);
    return true;
 }

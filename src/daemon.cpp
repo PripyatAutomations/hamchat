@@ -88,6 +88,7 @@ void shutdown(int status) {
 static void sighandler(int signum) {
    Log->Crit("caught signal %d...", signum);
    switch(signum) {
+      // Convenience signals
       case SIGHUP:
          Log->Info("Reloading!");
          break;
@@ -98,6 +99,7 @@ static void sighandler(int signum) {
          Log->Info("Dumping statistics to disk");
          dump_statistics(cfg->Get("path.statsfile", NULL));
          break;
+      // Fatal signals
       case SIGINT:
       case SIGTERM:
       case SIGKILL:
@@ -110,9 +112,11 @@ static void sighandler(int signum) {
 
 // set up signal handlers
 void init_signals(void) {
+   // Fatal signals
    signal(SIGINT, sighandler);
    signal(SIGTERM, sighandler);
    signal(SIGKILL, sighandler);
+   // User signals
    signal(SIGHUP, sighandler);
    signal(SIGUSR1, sighandler);
    signal(SIGUSR2, sighandler);
