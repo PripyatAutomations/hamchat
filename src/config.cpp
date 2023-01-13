@@ -104,18 +104,16 @@ bool Config::ParseSection(const char *section) {
             // match in rig_driver
             int driver_name_ent = sizeof(struct rig_driver_names)/sizeof(rig_driver_names[0]);
             for (int i = 0; i < driver_name_ent; i++) {
-               rig_driver_names *rd = rig_driver_names[i];
+               struct rig_driver_names *rd = &rig_driver_names[i];
 
-               if (strncasecmp(val, rd.name, strlen(rd.name)) == 0) {
-                  Log->Debug("rdn: %x rdd: %i rrid: %d rrd: %x", rd.name, rd.driver, rig_id, rigs[rig_id]->driver);
+               if (strncasecmp(val, rd->name, strlen(rd->name)) == 0) {
+                  Log->Debug("rdn: %x rdd: %i rrid: %d rrd: %x", rd->name, rd->driver, rig_id, rigs[rig_id]->driver);
                   rigs[rig_id]->driver = rig_driver_names[i].driver;
-                  Log->Info("<radio%d> set driver: %s (%d)", rig_id, rd.name, rd.driver);
+                  Log->Info("<radio%d> set driver: %s (%d)", rig_id, rd->name, rd->driver);
                   break;
                } else
-                  Log->Debug("skipping %s", rd.name);
+                  Log->Debug("skipping %s", rd->name);
             }
-            int driver = rigs[rig_id]->driver;
-            Log->Info("<radio%d> set driver: %s (%d)", rig_id, rd.driver), driver;
          } else if (strncasecmp(key, "model", 5) == 0) {
             rigs[rig_id]->model = atoi(val);
             Log->Info("<radio%d> set model: %d", rig_id, rigs[rig_id]->model);
