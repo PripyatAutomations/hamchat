@@ -1,9 +1,6 @@
 #define	 _irc_channel_cpp
 #include "hamchat.h"
 
-//
-// channel crap
-//
 //bool    Channels_lock;
 llist_t *Channels = NULL;
 

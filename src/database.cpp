@@ -1,7 +1,9 @@
 #include "hamchat.h"
 Database *db = NULL;
 
-// sqlite3_close(this->db);
+Database::~Database() {
+ sqlite3_close(this->db);
+}
 
 Database::Database(const char *path, const char *schema) {
    int rc;

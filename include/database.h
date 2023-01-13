@@ -7,6 +7,7 @@ class Database {
 
    public:
       Database(const char *path, const char *schema);
+      ~Database();
       bool LoadSchema(const char *path);
 };
 
