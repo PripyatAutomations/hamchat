@@ -1,5 +1,5 @@
 #include "hamchat.h"
-llist_t *Listeners = NULL;
+//llist_t *Listeners = NULL;
 
 int set_nonblocking(int fd) {
    int flags;
@@ -18,21 +18,21 @@ void sock_read_cb(EV_P_ ev_io *w, int revents) {
 
    // find the client structure or bail
    if ((cptr = find_client(w->fd)) == NULL) {
-      Log->Crit("<%d> sock_read_cb was called, but no Client * found, kicking!", w->fd);
+      Log->Send(LOG_CRIT, "<%d> sock_read_cb was called, but no Client * found, kicking!", w->fd);
       ev_io_stop(EV_A_ w);
       close(w->fd);
       return;
    }
 
    if (cptr->cli_type != CLI_TYPE_LOCAL) {
-      Log->Crit("What??? got socket read for non-local client on fd %d", w->fd);
+      Log->Send(LOG_CRIT, "What??? got socket read for non-local client on fd %d", w->fd);
       return;
    }
 
    // we shouldn't read into the buffer while parser is running...
    // this shouldn't happen and means someone screwed up a lock
    if (cptr->sock->recvbuf_lock) {
-      Log->Debug("<%d> sock_read_cb called while recvbuf is locked, aborting (fix the bug!)", w->fd);
+      Log->Send(LOG_DEBUG, "<%d> sock_read_cb called while recvbuf is locked, aborting (fix the bug!)", w->fd);
       abort();
       return;
    }
@@ -55,7 +55,7 @@ void sock_read_cb(EV_P_ ev_io *w, int revents) {
 
       nread = recv(w->fd, bp, buf_free, 0);
       
-//      Log->Debug("<%d> recv: %x, %lu, %lu: %s", w->fd, bp, buf_free, nread, bp);
+//      Log->Send(LOG_DEBUG, "<%d> recv: %x, %lu, %lu: %s", w->fd, bp, buf_free, nread, bp);
 
       if (nread > 0) {
          // adjust these, so we calculate things correctly below...
@@ -70,17 +70,17 @@ void sock_read_cb(EV_P_ ev_io *w, int revents) {
          } else if (strchr(cptr->sock->recvbuf, '\n') != NULL) {
             cptr->sock->read_waiting = true;
          } else {
-//            Log->Debug("<%d> read %lu bytes, but no line ending, so not calling parser", cptr->sock->fd, nread);
+//            Log->Send(LOG_DEBUG, "<%d> read %lu bytes, but no line ending, so not calling parser", cptr->sock->fd, nread);
          }
       } else if (nread == 0) {	// deal with hangups
             if (cptr) {
-               Log->Info("<%d> hangup by IRC Client %s (%s)", w->fd, cptr->callsign, cptr->callsign);
-               cptr->SendToCommonChannels(":%s QUIT :Connection reset by peer", cptr->callsign);
+               Log->Send(LOG_INFO, "<%d> hangup by IRC Client %s (%s)", w->fd, cptr->GetCallsign(), cptr->GetCallsign());
+               cptr->SendToCommonChannels(":%s QUIT :Connection reset by peer", cptr->GetCallsign());
                cptr->sock->recvbuf_lock = false;	// unlock this so things can carry on...
                delete cptr;
                return;
             } else {
-               Log->Info("<%d> hangup by unknown connection", w->fd);
+               Log->Send(LOG_INFO, "<%d> hangup by unknown connection", w->fd);
                ev_io_stop(EV_A_ w);
                close(w->fd);
                continue;
@@ -91,14 +91,14 @@ void sock_read_cb(EV_P_ ev_io *w, int revents) {
       }
       read_tries_left--;
 //      if (read_tries_left > 0) {
-//         Log->Debug("<%d> read_tries_left: %d", w->fd, read_tries_left);
+//         Log->Send(LOG_DEBUG, "<%d> read_tries_left: %d", w->fd, read_tries_left);
 //      } else if (read_tries_left == -1) {
-//         Log->Warn("<%d> read failed", w->fd);
+//         Log->Send(LOG_WARNING, "<%d> read failed", w->fd);
 //      }
    }
 
-   Log->Debug("<%d> COMPLETED recv: buf_used: %lu (%lu new), buf_free: %lu (max: %lu)", w->fd, buf_used, total_read, buf_free, buf_size);
-//   Log->Debug("<%d> buffer: |%s|", w->fd, cptr->sock->recvbuf);
+   Log->Send(LOG_DEBUG, "<%d> COMPLETED recv: buf_used: %lu (%lu new), buf_free: %lu (max: %lu)", w->fd, buf_used, total_read, buf_free, buf_size);
+//   Log->Send(LOG_DEBUG, "<%d> buffer: |%s|", w->fd, cptr->sock->recvbuf);
 
    // unlock the readbuf
    cptr->sock->recvbuf_lock = false;
@@ -140,11 +140,11 @@ static void sock_pending_cb(EV_P_ ev_io *w, int revents) {
 
       if (client_fd == -1) {
          if (errno != EAGAIN && errno != EWOULDBLOCK) {
-            Log->Warn("<%d> Failed to accept(): %d (%s)", w->fd, errno, strerror(errno));
+            Log->Send(LOG_WARNING, "<%d> Failed to accept(): %d (%s)", w->fd, errno, strerror(errno));
          }
          break;
       }
-      Log->Info("<%d> Accepted new connection on fd <%d>", w->fd, client_fd);
+      Log->Send(LOG_INFO, "<%d> Accepted new connection on fd <%d>", w->fd, client_fd);
 
       // update statistics
       stats.total_connections++;
@@ -154,16 +154,17 @@ static void sock_pending_cb(EV_P_ ev_io *w, int revents) {
       set_nonblocking(cptr->sock->fd);
       ev_io_init(&cptr->sock->io, sock_read_cb, cptr->sock->fd, EV_READ);
       ev_io_start(EV_A_ &cptr->sock->io);
-
+#if	0
       // append to client list...
       if (Clients == NULL) {
          Clients = llist_append(NULL, (void *)cptr);
       } else {
          llist_t *tp = llist_append(Clients, (void *)cptr);
       }
+#endif
    }
    // show the final list after processing this queue
-   llist_dump(Clients);
+//   llist_dump(Clients);
 }
 
 Listener::Listener(const char *addr) {
@@ -176,7 +177,7 @@ Listener::Listener(const char *addr) {
    sep = strchr(addr, ':');
 
    if (sep == NULL) {
-//      Log->Crit("invalid listener configuration: %s", addr);
+//      Log->Send(LOG_CRIT, "invalid listener configuration: %s", addr);
       shutdown(100);
    }
 
@@ -187,7 +188,7 @@ Listener::Listener(const char *addr) {
       int ptmp = atoi(pp);
 
       if (ptmp == 0) {
-//         Log->Crit("parsing listener %s failed: port '%s' invalid (0)", addr, port);
+//         Log->Send(LOG_CRIT, "parsing listener %s failed: port '%s' invalid (0)", addr, port);
          shutdown(101);
       }
       this->port = ptmp;
@@ -200,14 +201,14 @@ Listener::Listener(const char *addr) {
 
    this->sock = new Socket(socket(PF_INET, SOCK_STREAM, 0));
 
-   Log->Info("Starting listener on %s:%d", this->host, this->port);
+   Log->Send(LOG_INFO, "Starting listener on %s:%d", this->host, this->port);
    this->running = true;
 
    // try to set SO_REUSEADDR for quicker restarts
    const int one = 1;
 
    if (setsockopt(this->sock->fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int)) < 0)
-      Log->Crit("setsockopt(SO_REUSEADDR) failed");
+      Log->Send(LOG_CRIT, "setsockopt(SO_REUSEADDR) failed");
 
    // Convert the host and port into a BSD style sockaddr_in
    struct sockaddr_in sa;
@@ -222,7 +223,7 @@ Listener::Listener(const char *addr) {
    }
 
    if (bind(this->sock->fd, (struct sockaddr *)&sa, sizeof(sa)) != 0) {
-      Log->Crit("error binding listener %s:%d: %d (%s)", this->host, this->port, errno, strerror(errno));
+      Log->Send(LOG_CRIT, "error binding listener %s:%d: %d (%s)", this->host, this->port, errno, strerror(errno));
       shutdown(120);
    }
    set_nonblocking(this->sock->fd);
@@ -239,6 +240,7 @@ Listener::Listener(const char *addr) {
 bool create_listener(const char *uri) {
    Listener *lptr = new Listener(uri);
 
+#if	0
    if (Listeners == NULL) {
       Listeners = llist_append(NULL, (void *)&lptr);
    } else {
@@ -247,5 +249,7 @@ bool create_listener(const char *uri) {
 
    if (Listeners != NULL)
       return true;
+#endif
+
    return false;
 }

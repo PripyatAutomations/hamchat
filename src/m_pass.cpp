@@ -5,12 +5,12 @@ bool m_pass(Client *cptr, int argc, char **argv) {
    size_t chpass_sz = -1;
 
    if (cptr->conn_state & IRC_STATE_PASS) {
-      cptr->Send(":%s 462 %s :You may not reregister", cfg->Get("core.servername", "hamchat.local"), cptr->callsign);
+      cptr->Send(":%s 462 %s :You may not reregister", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign());
       return false;
    }
 
    if (chpass == NULL) {
-      cptr->Send(":%s 461 %s PASS :Not enough parameters", cfg->Get("core.servername", "hamchat.local"), cptr->callsign);
+      cptr->Send(":%s 461 %s PASS :Not enough parameters", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign());
       return false;
    }
 

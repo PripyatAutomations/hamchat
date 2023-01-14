@@ -25,6 +25,7 @@ typedef enum irc_cli_type irc_cli_type_t;
 
 class Client {
    private:
+      char callsign[CALLSIGN_LEN+1]; // amateur callsign
    public:
       irc_cli_type_t cli_type;
       Socket *sock;		// our socket
@@ -39,7 +40,6 @@ class Client {
       char username[USER_LEN+1]; // username sent by client
       char realname[REALNAME_LEN+1]; // 'real' name
       char hostname[HOST_NAME_MAX+1];
-      char callsign[CALLSIGN_LEN+1]; // amateur callsign
       char pass[PASS_LEN];
       Client(irc_cli_type_t type, int fd);		// Constructor
       ~Client();
@@ -51,12 +51,15 @@ class Client {
       bool SendToCommonChannels(const char *fmt, ...);
       bool send_connect_numerics(void);
       // User Modes & Flags
+      bool SetCallsign(const char *callsign);
+      const char *GetCallsign(void);
       bool SetMode(const char *modes);
 };
 
 ///////////////////////////
 // list of connected IRC clients
-extern llist_t *Clients;
+extern dict *Clients_by_fd;
+extern dict *Clients_by_callsign;
 
 // Locate the client structure associated with a file descriptor, if possible
 extern Client *find_client(int fd);

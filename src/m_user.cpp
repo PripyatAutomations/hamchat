@@ -7,13 +7,13 @@ bool m_user(Client *cptr, int argc, char **argv) {
    // client has already sent USER command
    if (cptr->conn_state & IRC_STATE_USER) {
       // Command is invalid from a logged in user
-      cptr->Send(":%s 462 %s :You may not reregister", cfg->Get("core.servername", "hamchat.local"), cptr->callsign);
+      cptr->Send(":%s 462 %s :You may not reregister", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign());
       return false;
    }
 
    // validate the USER info...
    if (username == NULL || realname == NULL) {
-      Log->Warn("<%d> has bogus username '%s' or realname '%s'", (username ? username : "NULL"), (realname ? realname : "NULL"));
+      Log->Send(LOG_WARNING, "<%d> has bogus username '%s' or realname '%s'", (username ? username : "NULL"), (realname ? realname : "NULL"));
    }
 
    // new user, needs USER state flag added
@@ -29,14 +29,14 @@ bool m_user(Client *cptr, int argc, char **argv) {
 
    // if client has sent NICK already, go ahead and send numerics
    if (cptr->conn_state & IRC_STATE_NICK) {
-     Log->Debug("<%d> got USER after NICK, proceeding", cptr->sock->fd);
+     Log->Send(LOG_DEBUG, "<%d> got USER after NICK, proceeding", cptr->sock->fd);
      cptr->send_connect_numerics();
    } else {
-     Log->Debug("<%d> got USER, waiting for NICK", cptr->sock->fd);
+     Log->Send(LOG_DEBUG, "<%d> got USER, waiting for NICK", cptr->sock->fd);
    }
 
    // if we mdae i
-   Log->Debug("<%d> client set USER=%s RealName=%s", cptr->sock->fd, cptr->username, cptr->realname);
+   Log->Send(LOG_DEBUG, "<%d> client set USER=%s RealName=%s", cptr->sock->fd, cptr->username, cptr->realname);
 
    return true;
 }

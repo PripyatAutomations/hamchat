@@ -1,19 +1,101 @@
-   #include "hamchat.h"
+#include "hamchat.h"
+// XXX: Add support for logging to channels
 
-//
-//
-//
-// XXX: Add support for logging to a channel
-//
+Logger *Log = NULL;
 
-Logger *Log;
-static enum LogLevel my_loglevel = LOG_DEBUG;
+static LogHndl *mainlog = NULL;
+static struct log_levels {
+   const char *str;
+   int level;
+} log_levels[] = {
+   { "debug", LOG_DEBUG },
+   { "info", LOG_INFO },
+   { "notice", LOG_NOTICE },
+   { "warning", LOG_WARNING },
+   { "error", LOG_ERR },
+   { "critical", LOG_CRIT },
+   { "alert", LOG_ALERT },
+   { "emergency", LOG_EMERG },
+   { NULL, -1 },
+};
 
-void log_init(const char *path) {
-   Log = new Logger(path);
+static inline const char *LogName(int level) {
+   struct log_levels *lp = log_levels;
+
+   do {
+      if (lp->level == level)
+         return lp->str;
+
+      lp++;
+   } while(lp->str != NULL);
+
+   return LOG_INVALID_STR;
+}
+
+static inline const int LogLevel(const char *name) {
+   struct log_levels *lp = log_levels;
+
+   do {
+      if (strcmp(lp->str, name) == 0)
+         return lp->level;
+
+      lp++;
+   } while(lp->str != NULL);
+
+   return -1;
+}
+
+bool Logger::Send(int level, const char *msg, ...) {
+   va_list ap;
+   va_start(ap, msg);
+   return this->Send(level, msg, ap);
+}
+
+bool Logger::Send(int level, const char *msg, va_list ap) {
+   char datebuf[32];
+   char buf[4096];
+   int max;
+   FILE *fp = stderr;		// default to stderr til logging is up
+
+   // create data stamp
+   memset(datebuf, 0, sizeof(datebuf));
+   strftime(datebuf, sizeof(datebuf) - 1, "%Y-%m-%d %H:%M:%S", localtime(&now));
+
+   max = LogLevel(cfg->Get("log.level", "debug"));
+
+   if (max < level)
+      return false;
+
+
+   if (mainlog) {
+      if (mainlog->type == LOG_syslog) {
+         vsyslog(level, msg, ap);
+      } else if (mainlog->type != NONE) {
+         memset(buf, 0, 4096);
+         vsnprintf(buf, 4095, msg, ap);
+      }
+
+      if (mainlog->type != LOG_stderr && mainlog->fp)
+         fp = mainlog->fp;
+   }
+
+   // if we aren't in daemon mode, write to stdout
+   if (cfg->GetBool("core.daemonize", false) == false && fp != stderr) {
+      fprintf(stdout, "%s [%s] %s\n", datebuf, LogName(level), buf);
+      fflush(stdout);
+   }
+
+   fprintf(fp, "%s [%s] %s\n", datebuf, LogName(level), buf);
+
+   // force it to disk
+   fflush(fp);
+
+   va_end(ap);
+   return true;
 }
 
 Logger::Logger(const char *path) {
+/*
    FILE *fp = NULL;
 
    if ((fp = fopen(path, "w+")) != NULL) {
@@ -25,94 +107,49 @@ Logger::Logger(const char *path) {
       cfg->Add("core.daemonize", "false");
    }
 }
+*/
+   if (mainlog)
+      free(mainlog);
+
+   mainlog = (LogHndl *)malloc(sizeof(LogHndl));
+
+   if (strcasecmp(path, "syslog") == 0) {
+      mainlog->type = LOG_syslog;
+      openlog("hamchat", LOG_NDELAY|LOG_PID, LOG_DAEMON);
+   } else if (strcasecmp(path, "stderr") == 0) {
+      mainlog->type = LOG_stderr;
+      mainlog->fp = stderr;
+   } else if (strncasecmp(path, "fifo://", 7) == 0) {
+      if (is_fifo(path + 7) || is_file(path + 7))
+         unlink(path + 7);
+
+      mkfifo(path+7, 0600);
+
+      if (!(mainlog->fp = fopen(path + 7, "w"))) {
+         this->Send(LOG_ERR, "Failed opening log fifo '%s' %s (%d)", path+7, errno, strerror(errno));
+         mainlog->fp = stderr;
+      } else
+         mainlog->type = LOG_fifo;
+   } else if (strncasecmp(path, "file://", 7) == 0) {
+      if (!(mainlog->fp = fopen(path + 7, "w+"))) {
+         this->Send(LOG_ERR, "failed opening log file '%s' %s (%d)", path+7, errno, strerror(errno));
+         mainlog->fp = stderr;
+      } else
+         mainlog->type = LOG_file;
+   }
+}
 
 Logger::~Logger() {
-   if (this->fp != NULL) {
-      this->Crit("Closing logfile!");
-      fflush(this->fp);
-      fclose(this->fp);
-   }
-}
+   if (mainlog == NULL)
+      return;
 
-int Logger::Log(enum LogLevel loglevel, const char *str, va_list ap) {
-   char logbuf[1024];
-   char datebuf[32];
-   const char *priority = NULL;
-
-   if (loglevel > my_loglevel) {
-      // Don't bother showing it
-      return 0;
+   if (mainlog->type == LOG_file || mainlog->type == LOG_fifo) {
+      fflush(mainlog->fp);
+      fclose(mainlog->fp);
+   } else if (mainlog->type == LOG_syslog) {
+      closelog();
    }
 
-   // expand out the log message to full text
-   memset(logbuf, 0, sizeof(logbuf));
-   vsnprintf(logbuf, sizeof(logbuf) - 1, str, ap);
-
-   // create data stamp
-   memset(datebuf, 0, sizeof(datebuf));
-   strftime(datebuf, sizeof(datebuf) - 1, "%Y-%m-%d %H:%M:%S", localtime(&now));
-
-   // priority labels      
-   switch(loglevel) {
-      case LOG_CRIT:
-         priority = "Crit";
-         break;
-      case LOG_WARN:
-         priority = "Warn";
-         break;
-      case LOG_INFO:
-         priority = "Info";
-         break;
-      case LOG_DEBUG:
-         priority = "Debug";
-         break;
-      case LOG_NONE:
-      default:
-         priority = "NONE";
-         break;
-   }
-
-   // if we aren't in daemon mode, write to stdout
-   if (cfg->GetBool("core.daemonize", false) == false) {
-      fprintf(stdout, "%s [%s] %s\n", datebuf, priority, logbuf);
-      fflush(stdout);
-   }
-
-   if (this->fp != NULL) {
-      // print timestamp and system
-      fprintf(this->fp, "%s [%s] %s\n", datebuf, priority, logbuf);
-
-      // ensure it gets written to disk immediately
-      fflush(this->fp);
-   }
-
-   return 0;
-}
-
-int Logger::Crit(const char *f, ...) {
-   va_list ap;
-
-   va_start(ap, f);
-   return this->Log(LOG_CRIT, f, ap);
-}
-
-int Logger::Debug(const char *f, ...) {
-   va_list ap;
-
-   va_start(ap, f);
-   return this->Log(LOG_DEBUG, f, ap);
-}
-
-int Logger::Info(const char *f, ...) {
-   va_list ap;
-
-   va_start(ap, f);
-   return this->Log(LOG_INFO, f, ap);
-}
-
-int Logger::Warn(const char *f, ...) {
-   va_list ap;
-
-   va_start(ap, f);
-   return this->Log(LOG_WARN, f, ap);
+   free(mainlog);
+   mainlog = NULL;
 }

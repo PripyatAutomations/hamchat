@@ -57,14 +57,14 @@ bool m_join(Client *cptr, int argc, char **argv) {
       char *chname = chnames;
 
       if (*chname == '\0') {
-         Log->Debug("<%d> sent JOIN<NULL>...why?", cptr->sock->fd);
+         Log->Send(LOG_DEBUG, "<%d> sent JOIN<NULL>...why?", cptr->sock->fd);
          cptr->Send(":%s NOTICE * :Why your client send JOIN :<NULL>??", cfg->Get("core.servername", "hamchat.local"));
          return false;
       }
 
       if (strlen(chname) == 1 && atoi(chname) == '0') {
          // XXX: Part all channels
-         Log->Debug("<%d> requested JOIN 0 (leave all channels)", cptr->sock->fd);
+         Log->Send(LOG_DEBUG, "<%d> requested JOIN 0 (leave all channels)", cptr->sock->fd);
          return false;
       }
 
@@ -75,7 +75,7 @@ bool m_join(Client *cptr, int argc, char **argv) {
       if (chptr == NULL) {
          // try to make new channel, with no key
          if ((chptr = find_or_add_channel(cptr, chname)) == NULL) {
-            Log->Crit("<%d> Couldn't create channel %s", cptr->sock->fd, chname);
+            Log->Send(LOG_CRIT, "<%d> Couldn't create channel %s", cptr->sock->fd, chname);
             return false;
          }
       }
@@ -83,14 +83,14 @@ bool m_join(Client *cptr, int argc, char **argv) {
       if (*chptr->key != '\0') {
          // Validate the key, for now disallow entry with keys
 //         if (strcasecmp(chptr->key, keys[i]) != 0) {
-            cptr->Send(":%s 475 %s %s :Cannot join channel (+k)", cfg->Get("core.servername", "hamchat.local"), cptr->callsign, chptr->name);
+            cptr->Send(":%s 475 %s %s :Cannot join channel (+k)", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign(), chptr->name);
             return false;
 //         }
       }
 
       // too many channels?
       if (count_user_channels(cptr) >= USER_MAX_CHAN) {
-         cptr->Send(":%s 405 %s %s :You have joined too many channels", cfg->Get("core.servername", "hamchat.local"), cptr->callsign, chptr->name);
+         cptr->Send(":%s 405 %s %s :You have joined too many channels", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign(), chptr->name);
          return false;
       }
 

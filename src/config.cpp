@@ -85,7 +85,7 @@ bool Config::ParseSection(const char *section) {
       } else if (strncasecmp(this_section, "radio", 5) == 0) {
          int rig_id = atoi(this_section+5);
          if (rig_id < 0 || rig_id > max_rigs) {
-            Log->Crit("config_parse(radio): rig_id: %d is out of bounds (0 - %d) at %s:%d", rig_id, max_rigs, this->file, line);
+            Log->Send(LOG_CRIT, "config_parse(radio): rig_id: %d is out of bounds (0 - %d) at %s:%d", rig_id, max_rigs, this->file, line);
             continue;
          }
 
@@ -93,7 +93,7 @@ bool Config::ParseSection(const char *section) {
          if (rigs[rig_id] == NULL) {
             rigs[rig_id] = new Rig();
             rigs[rig_id]->id = rig_id;
-            Log->Debug("Allocated new Rig for rig_id %d at %x", rigs[rig_id]->id, rigs[rig_id]);
+            Log->Send(LOG_DEBUG, "Allocated new Rig for rig_id %d at %x", rigs[rig_id]->id, rigs[rig_id]);
          }
 
          key = strtok(skip, "= \n");
@@ -107,16 +107,16 @@ bool Config::ParseSection(const char *section) {
                struct rig_driver_names *rd = &rig_driver_names[i];
 
                if (strncasecmp(val, rd->name, strlen(rd->name)) == 0) {
-                  Log->Debug("rdn: %x rdd: %i rrid: %d rrd: %x", rd->name, rd->driver, rig_id, rigs[rig_id]->driver);
+                  Log->Send(LOG_DEBUG, "rdn: %x rdd: %i rrid: %d rrd: %x", rd->name, rd->driver, rig_id, rigs[rig_id]->driver);
                   rigs[rig_id]->driver = rig_driver_names[i].driver;
-                  Log->Info("<radio%d> set driver: %s (%d)", rig_id, rd->name, rd->driver);
+                  Log->Send(LOG_INFO, "<radio%d> set driver: %s (%d)", rig_id, rd->name, rd->driver);
                   break;
                } else
-                  Log->Debug("skipping %s", rd->name);
+                  Log->Send(LOG_DEBUG, "skipping %s", rd->name);
             }
          } else if (strncasecmp(key, "model", 5) == 0) {
             rigs[rig_id]->model = atoi(val);
-            Log->Info("<radio%d> set model: %d", rig_id, rigs[rig_id]->model);
+            Log->Send(LOG_INFO, "<radio%d> set model: %d", rig_id, rigs[rig_id]->model);
          } else if (strncasecmp(key, "enabled", 7) == 0) {
             rigs[rig_id]->Connect();
          }

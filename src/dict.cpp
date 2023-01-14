@@ -232,12 +232,12 @@ int dict_add_ts(dict *d, const char *key, const char *val, time_t ts) {
 }
 
 /* dict_add_blob: Add a blob to a dict by with current timestamp */
-int dict_add_blob(dict *d, const char *key, const void **ptr) {
+int dict_add_blob(dict *d, const char *key, void *ptr) {
     return dict_add_p(d, key, NULL, &ptr, time(NULL), 1);
 }
 
 /* dict_add_blob_ts: Add a blob to a dict with chosen timestamp */
-int dict_add_blob_ts(dict *d, const char *key, const void **ptr, time_t ts) {
+int dict_add_blob_ts(dict *d, const char *key, void *ptr, time_t ts) {
     return dict_add_p(d, key, NULL, &ptr, ts, 1);
 }
 
@@ -350,7 +350,7 @@ const char *dict_get(dict *d, const char *key, const char *defval) {
    return defval;
 }
 
-void *dict_get_blob(dict *d, const char *key, const void **defval) {
+void *dict_get_blob(dict *d, const char *key, void *defval) {
    keypair *kp;
    unsigned  hash;
 

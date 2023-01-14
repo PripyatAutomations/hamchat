@@ -31,7 +31,7 @@ bool Heartbeat::Send(void) {
       snprintf(this->buf, buf_sz, "%s@%s/%dW",cfg->Get("station.callsign", "N0CALL"), cfg->Get("station.gridsquare", "FN20"), cfg->GetInt("station.default_txpower", 5));
    }
 
-   Log->Debug("Sending heartbeat: %s...", this->buf);
+   Log->Send(LOG_DEBUG, "Sending heartbeat: %s...", this->buf);
 
    return true;
 }

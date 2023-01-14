@@ -17,12 +17,12 @@ bool dump_statistics(const char *path) {
     if (stat(path, &sb) == 0) {
        // statistics file already exists, try to unlink it
        if (unlink(path)) {
-          Log->Warn("failed removing old statistics file %s: %d (%s)", path, errno, strerror(errno));
+          Log->Send(LOG_WARNING, "failed removing old statistics file %s: %d (%s)", path, errno, strerror(errno));
           return false;
        }
     }
     if ((fp = fopen(path, "w+")) == NULL) {
-       Log->Warn("failed opening statistics file %s: %d (%s)", path, errno, strerror(errno));
+       Log->Send(LOG_WARNING, "failed opening statistics file %s: %d (%s)", path, errno, strerror(errno));
        return false;
     }
 

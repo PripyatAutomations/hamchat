@@ -8,7 +8,7 @@ bool m_quit(Client *cptr, int argc, char **argv) {
    }
 
    // delete the Client
-   Log->Info("<%d> Client %s QUIT", cptr->sock->fd, cptr->callsign);
+   Log->Send(LOG_INFO, "<%d> Client %s QUIT", cptr->sock->fd, cptr->GetCallsign());
    delete cptr;
    return true;
 }

@@ -2,6 +2,7 @@
 core.daemonize=false
 ;core.daemonize=true
 core.servername=irc.hamchat.local
+core.loglevel=debug
 path.db_main=etc/hamchat.db
 path.db_main_schema=etc/hamchat.sql
 path.logfile=hamchat.log

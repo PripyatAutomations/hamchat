@@ -79,24 +79,24 @@ void shutdown(void) {
 
 void shutdown(int status) {
    shutdown();
-   Log->Crit("shutting down: %d", status);
+   Log->Send(LOG_CRIT, "shutting down: %d", status);
    exit(status);
 }
 
 
 // Catch signals
 static void sighandler(int signum) {
-   Log->Crit("caught signal %d...", signum);
+   Log->Send(LOG_CRIT, "caught signal %d...", signum);
    switch(signum) {
       // Convenience signals
       case SIGHUP:
-         Log->Info("Reloading!");
+         Log->Send(LOG_INFO, "Reloading!");
          break;
       case SIGUSR1:
-         Log->Info("Dumping database to disk");
+         Log->Send(LOG_INFO, "Dumping database to disk");
          break;
       case SIGUSR2:
-         Log->Info("Dumping statistics to disk");
+         Log->Send(LOG_INFO, "Dumping statistics to disk");
          dump_statistics(cfg->Get("path.statsfile", NULL));
          break;
       // Fatal signals
@@ -105,7 +105,7 @@ static void sighandler(int signum) {
       case SIGKILL:
          shutdown(signum);
       default:
-         Log->Crit("Caught unknown signal %d", signum);
+         Log->Send(LOG_CRIT, "Caught unknown signal %d", signum);
          break;
    }
 }

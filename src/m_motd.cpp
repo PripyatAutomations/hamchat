@@ -13,7 +13,7 @@ MOTD::MOTD(const char *path) {
       fp = fopen(path, "r");
 
       if (!fp) {
-         Log->Warn("couldn't open motd file %s: %d: %s", path, errno, strerror(errno));
+         Log->Send(LOG_WARNING, "couldn't open motd file %s: %d: %s", path, errno, strerror(errno));
          return;
       }
 
@@ -22,6 +22,7 @@ MOTD::MOTD(const char *path) {
       // copy the stat struct, so we can see if file has changed later...
       memcpy((void *)&this->last_stat, (void *)&stat, sizeof(struct stat));
 
+#if	0
       while (!feof(fp)) {
          char *buf = (char *)malloc(256);
          memset(buf, 0, 256);
@@ -34,14 +35,15 @@ MOTD::MOTD(const char *path) {
                llist_append(this->motd_text, (void *)buf);
             }
          } else {
-            Log->Debug("Failed loading motd line, trying to continue...");
+            Log->Send(LOG_DEBUG, "Failed loading motd line, trying to continue...");
          }
       }
+#endif
 
       // close file handle
       fclose(fp);
    } else {
-      Log->Warn("motd file %s not found", path);
+      Log->Send(LOG_WARNING, "motd file %s not found", path);
    }
 }
 
@@ -51,6 +53,7 @@ bool MOTD::Send(Client *cptr) {
    if (cptr == NULL)
       return false;
 
+#if	0
    if (this->motd_text != NULL) {
       cptr->Send(":%s 375 %s :- %s Message of the day -", cfg->Get("core.servername", "hamchat.local"), cptr->callsign, cfg->Get("core.servername", "hamchat.local"));
       llist_t *lp = this->motd_text;
@@ -69,6 +72,7 @@ bool MOTD::Send(Client *cptr) {
    } else {
       cptr->Send(":%s 422 %s :MOTD File is missing", cfg->Get("core.servername", "hamchat.local"), cptr->callsign);
    }
+#endif
    return true;
 }
 

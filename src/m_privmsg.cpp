@@ -6,12 +6,12 @@ bool do_privmsg(Client *cptr, int argc, char **argv, bool is_notice) {
     char *msg = argv[3];
 
     if (target == NULL) {
-       cptr->Send(":%s 411 %s :No recipient given", cfg->Get("core.servername", "hamchat.local"), cptr->callsign);
+       cptr->Send(":%s 411 %s :No recipient given", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign());
        return false;
     }
 
     if (msg == NULL) {
-       cptr->Send(":%s 412 %s :No text to send", cfg->Get("core.servername", "hamchat.local"), cptr->callsign);
+       cptr->Send(":%s 412 %s :No text to send", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign());
        return false;
     }
 
@@ -29,28 +29,28 @@ bool do_privmsg(Client *cptr, int argc, char **argv, bool is_notice) {
 
         // if no such channel, muted, or not a member, error
         if (chptr == NULL || muted || !is_member) {
-           cptr->Send(":%s 404 %s %s :Cannot send to channel", cfg->Get("core.servername", "hamchat.local"), cptr->callsign, target);
+           cptr->Send(":%s 404 %s %s :Cannot send to channel", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign(), target);
            return false;
         }
 
         // if we made it this far, send the message
-        chptr->SendToAll(":%s!%s@%s %s %s :%s", cptr->callsign, cptr->username, cptr->hostname, (is_notice ? "NOTICE" : "PRIVMSG"), target, msg);
+        chptr->SendToAll(":%s!%s@%s %s %s :%s", cptr->GetCallsign(), cptr->username, cptr->hostname, (is_notice ? "NOTICE" : "PRIVMSG"), target, msg);
     } else {  // it's for a user
         // destination client (if a user)
         Client *dcptr = NULL;
         
         // couldn't find the target
         if ((dcptr = find_client(target)) == NULL) {
-           cptr->Send(":%s 401 %s %s :No such callsign", cfg->Get("core.servername", "hamchat.local"), cptr->callsign, target);
+           cptr->Send(":%s 401 %s %s :No such callsign", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign(), target);
            return false;
         }
 
         // send away message, if it's to a person
         if (dcptr->away_msg != NULL) {
-           cptr->Send(":%s 301 %s %s :%s", cfg->Get("core.servername", "hamchat.local"), cptr->callsign, dcptr->callsign, dcptr->away_msg);
+           cptr->Send(":%s 301 %s %s :%s", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign(), dcptr->GetCallsign(), dcptr->away_msg);
         }
 
-        dcptr->Send(":%s!%s@%s %s %s :%s", cptr->callsign, cptr->username, cptr->hostname, (is_notice ? "NOTICE" : "PRIVMSG"), dcptr->callsign, argv[3]);
+        dcptr->Send(":%s!%s@%s %s %s :%s", cptr->GetCallsign(), cptr->username, cptr->hostname, (is_notice ? "NOTICE" : "PRIVMSG"), dcptr->GetCallsign(), argv[3]);
     }
     cptr->last_msg = now;
     return true;

@@ -1,67 +1,47 @@
 #define	 _irc_channel_cpp
 #include "hamchat.h"
+////////////////////////////////////////////////////////////
+// In memory representation of all of our active channels //
+////////////////////////////////////////////////////////////
+// Here we store a dictionary of all the channels known to us
+dict *Channels = NULL;
 
-//bool    Channels_lock;
-llist_t *Channels = NULL;
+// Someday we'll implement dumping the channel db to sql (and loading from it!)
+bool Channel::DumpToDb(Database *db, const char *table) {
+   return false;
+}
 
-// constructor for a new channel
+bool load_channels_from_db(Database *db, const char *table) {
+   return false;
+}
+
 Channel::Channel(Client *cptr, const char *name) {
-   // copy data into object
+   if (Channels == NULL)
+      Channels = dict_new();
+
    snprintf(this->name, CHAN_LEN, "%s", name);
    this->owner = cptr;
-   this->members = llist_append(NULL, (void *)cptr);
+   this->members = dict_new();
 
-   // create/append channel list...
-   if (Channels == NULL) {
-      Channels = llist_append(NULL, (void *)this);
-   } else {
-      llist_append(Channels, (void *)this);
-   }
+   // Add ourself to the Channels list
+   dict_add_blob(Channels, this->name, (void *)this);
 }
 
-// look a channel up by name and get it's list pointer (so that it could be deleted, or whatever)
-llist_t *find_channel_lp(const char *name) {
-   llist_t *lp = Channels;
-
-   // list is empty
-   if (lp == NULL) {
-      Log->Debug("find_channel: Channels list is NULL looking for %s", name);
-      return NULL;
-   }
-
-   // walk the list
-   while (lp != NULL) {
-      Channel *chptr;
-
-      // if there's valid data in the pointer...
-      if ((lp != NULL) && (lp->ptr != NULL)) {
-         // cast it to channel
-         chptr = (Channel *)lp->ptr;
-
-         // if there's no name, this isn't it
-         if (chptr->name[0] != '\0') {
-            continue;
-         }
-         if (strcasecmp(chptr->name, name) == 0) {
-            Log->Debug("found channel %s, returning lp: %x", chptr->name, lp);
-            break;
-         }
-      }
-      lp = lp->next;
-   }
-
-   return lp;
+Channel::~Channel() {
+   // Remove ourself from the Channels list
+   dict_del(Channels, this->name);
 }
 
+// Find a channel by name
 Channel *find_channel(const char *name) {
-   Channel *chptr;
-   llist_t *lp = find_channel_lp(name);
+   void *ptr = NULL;
+   Channel *chptr = NULL;
 
-   if (lp != NULL && lp->ptr != NULL) {
-      chptr = (Channel *)lp->ptr;
+   if ((ptr = dict_get_blob(Channels, name, NULL)) != NULL) {
+      chptr = (Channel *)ptr;
+      Log->Send(LOG_DEBUG, "found channel %s, returning chptr: %x", chptr->name, chptr);
       return chptr;
    }
-
    return NULL;
 }
 
@@ -87,56 +67,39 @@ bool Channel::AddUser(Client *cptr) {
    if (cptr == NULL)
       return false;
 
-   if (this->members != NULL) {
-      llist_t *lp = this->members;
-      do {
-         if (lp == NULL)
-            break;
+   void *vp;
+   if ((vp = dict_get_blob(this->members, cptr->GetCallsign(), NULL)) != NULL) {
+      cm = (irc_channel_member *)vp;
 
-         cm = (irc_channel_member *)lp->ptr;
-         if (cm->cptr == cptr) {
-            // XXX: Send you're already in channel error...
-            return false;
-         }
-
-         if (lp->next) {
-            lp = lp->next;
-         } else {
-            break;
-         }
-      } while (lp);
+      if (strcasecmp(cm->cptr->GetCallsign(), cptr->GetCallsign()) == 0) {
+         Log->Send(LOG_DEBUG, "user %s is already in channel %s", cptr->GetCallsign(), this->name);
+         // XXX: Send already in channel numeric
+         return false;
+      }
    }
 
    // if we made it here, add the user
    if ((cm = (irc_channel_member *)malloc(sizeof(irc_channel_member))) == NULL) {
-      Log->Crit("Couldn't allocate memory for irc_channel_member adding %s to %s: %d %s", cptr->callsign, this->name, errno, strerror(errno));
+      Log->Send(LOG_CRIT, "Couldn't allocate memory for irc_channel_member adding %s to %s: %d %s", cptr->GetCallsign(), this->name, errno, strerror(errno));
       return false;
    }
 
    // save time they joined
    cm->join_time = now;
 
-   // create channel's list if it doesn't exist yet
-   if (this->members == NULL) {
-      this->members = llist_append(NULL, (void *)cm);
-
-      // Give them ops
-      cm->has_op = true;
-   } else {
-      llist_append(this->members, (void *)cm);
-   }
+   // add to member list
+   dict_add_blob(this->members, cptr->GetCallsign(), cm);
 
    // broadcast the join the channel...
-   this->SendToAll(":%s!%s@%s JOIN %s", cptr->callsign, cptr->username, cptr->hostname ,this->name);
+   this->SendToAll(":%s!%s@%s JOIN %s", cptr->GetCallsign(), cptr->username, cptr->hostname ,this->name);
 
    // tell the user what's up with topic
    if (this->topic[0] == '\0') {
-      cptr->Send(":%s 331 %s %s :No topic is set", cfg->Get("core.servername", "hamchat.local"), cptr->callsign, this->name);
+      cptr->Send(":%s 331 %s %s :No topic is set", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign(), this->name);
    } else {
-      cptr->Send(":%s 332 %s %s :%s", cfg->Get("core.servername", "hamchat.local"), cptr->callsign, this->name, this->topic);
-      cptr->Send(":%s 333 %s %s %s :%lu", cfg->Get("core.servername", "hamchat.local"), cptr->callsign, this->name, this->topic_setby, this->topic_time);
+      cptr->Send(":%s 332 %s %s :%s", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign(), this->name, this->topic);
+      cptr->Send(":%s 333 %s %s %s :%lu", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign(), this->name, this->topic_setby, this->topic_time);
    }
-
    return true;
 }
 
@@ -145,23 +108,9 @@ bool Channel::RemoveUser(Client *cptr, const char *reason) {
    if (cptr == NULL)
       return false;
 
-   if (this->members != NULL) {
-      llist_t *lp = this->members;
-      do {
-        irc_channel_member *mp = (irc_channel_member *)lp->ptr;
-        Client *mcptr = mp->cptr;
+   dict_del(this->members, cptr->GetCallsign());
+   Log->Send(LOG_DEBUG, "<%d> removing from channel %s (%s)", cptr->sock->fd, this->name, reason);
 
-        if (mcptr != NULL && mcptr == cptr) {
-           Log->Debug("<%d> removing from channel %s (%s)", cptr->sock->fd, this->name, reason);
-           llist_remove(this->members, lp);
-           break;
-        }
-        lp = lp->next;
-      } while (lp != NULL);
-   } else {
-      Log->Debug("got request to remove %s from %s but they aren't a member!", cptr->callsign, this->name);
-      return false;
-   }
    return true;
 }
 
@@ -169,7 +118,7 @@ bool Channel::KickUser(Client *cptr, Client *kicker, const char *reason) {
    if (cptr == NULL)
       return false;
 
-   this->SendToAllExcept(NULL, ":%s KICK %s %s :%s", (kicker != NULL ? kicker->callsign : cfg->Get("core.servername", "hamchat.local")), this->name, cptr->callsign, reason);
+   this->SendToAllExcept(NULL, ":%s KICK %s %s :%s", (kicker != NULL ? kicker->GetCallsign() : cfg->Get("core.servername", "hamchat.local")), this->name, cptr->GetCallsign(), reason);
    this->RemoveUser(cptr, reason);
    return true;
 }
@@ -193,143 +142,59 @@ bool Channel::SendToAllExcept(Client *cptr, const char *msg, ...) {
 }
 
 bool Channel::SendToAllExcept(Client *cptr, const char *msg, va_list ap) {
-   // Implement the actual send to logic
-   llist_t *cm = this->members;
-
-   if (cm == NULL) {
-      return false;
-   }
-
-   do {
-     if (cm == NULL)
-        break;
-
-     irc_channel_member *mp = (irc_channel_member *)cm->ptr;
-
-     if (mp == NULL || mp->cptr == NULL) {
-        Log->Debug("<%s> bailing on null pts", this->name);
-        break;
-     }
-     Client *mcptr = mp->cptr;
-
-     // skip it if it's the Except
-     if (mcptr == NULL || mcptr == cptr) {
-        Log->Debug("<%s> skipping member %x", this->name, mp);
-        continue;
-     }
-
-     // if we made it here, send it to this user
-     mcptr->Send(msg, ap);
-
-     // continue on with the next member
-     cm = cm->next;
-   } while (cm != NULL);
+   // XXX: Iterate over the whole this->members dictionary
+//     mcptr->Send(msg, ap);
    return true;
 }
 
-Channel::~Channel() {
-}
 
 bool Channel::IsMuted(Client *cptr) {
-   llist_t *mp = this->members;
+   irc_channel_member *mp = NULL;
 
-   // can't be an op if channel has no members...
-   if (mp == NULL)
+   if ((mp = (irc_channel_member *)dict_get_blob(this->members, cptr->GetCallsign(), NULL)) == NULL) {
       return false;
+   }
 
-   do {
-      if (mp == NULL || mp->ptr == NULL)
-         return false;
+   if (mp->is_muted)
+      return true;
 
-      irc_channel_member *mptr = (irc_channel_member *)mp->ptr;
-
-      // we don't care about any user but cptr
-      if (mptr->cptr != cptr)
-         continue;
-
-      if (mptr->is_muted)
-         return true;
-
-      // next!
-      mp = mp->next;
-   } while(mp != NULL);
    return false;
 }
 
 bool Channel::IsOp(Client *cptr) {
-   llist_t *mp = this->members;
+   irc_channel_member *mp = NULL;
 
-   // can't be an op if channel has no members...
-   if (mp == NULL)
+   if ((mp = (irc_channel_member *)dict_get_blob(this->members, cptr->GetCallsign(), NULL)) == NULL) {
       return false;
+   }
 
-   do {
-      if (mp == NULL || mp->ptr == NULL)
-         return false;
+   if (mp->has_op)
+      return true;
 
-      irc_channel_member *mptr = (irc_channel_member *)mp->ptr;
-
-      // we don't care about any user but cptr
-      if (mptr->cptr != cptr)
-         continue;
-
-      if (mptr->has_op)
-         return true;
-
-      // next!
-      mp = mp->next;
-   } while(mp != NULL);
    return false;
 }
 
 bool Channel::IsVoice(Client *cptr) {
-   llist_t *mp = this->members;
+   irc_channel_member *mp = NULL;
 
-   // can't be an op if channel has no members...
-   if (mp == NULL)
+   if ((mp = (irc_channel_member *)dict_get_blob(this->members, cptr->GetCallsign(), NULL)) == NULL) {
       return false;
+   }
 
-   do {
-      if (mp == NULL || mp->ptr == NULL)
-         return false;
+   if (mp->has_voice)
+      return true;
 
-      irc_channel_member *mptr = (irc_channel_member *)mp->ptr;
-
-      // we don't care about any user but cptr
-      if (mptr->cptr != cptr)
-         continue;
-
-      if (mptr->has_voice)
-         return true;
-
-      // next!
-      mp = mp->next;
-   } while(mp != NULL);
    return false;
 }
 
 bool Channel::IsMember(Client *cptr) {
-   llist_t *mp = this->members;
+   irc_channel_member *mp = NULL;
 
-   // can't be an op if channel has no members...
-   if (mp == NULL)
+   if ((mp = (irc_channel_member *)dict_get_blob(this->members, cptr->GetCallsign(), NULL)) == NULL) {
       return false;
+   }
 
-   do {
-      if (mp == NULL || mp->ptr == NULL)
-         return false;
-
-      irc_channel_member *mptr = (irc_channel_member *)mp->ptr;
-
-      // we don't care about any user but cptr
-      if (mptr->cptr == cptr) {
-         return true;
-      }
-
-      // next!
-      mp = mp->next;
-   } while(mp != NULL);
-   return false;
+   return true;
 }
 
 bool Channel::IsOwner(Client *cptr) {

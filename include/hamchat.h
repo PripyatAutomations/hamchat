@@ -1,7 +1,7 @@
 #if	!defined(_hamchat_h)
 #define	_hamchat_h
 #define	MAX_CMDS	32	// max commands per module
-
+#include <list>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <string.h>
+#include <syslog.h>
 #include <sqlite3.h>
 #include <dlfcn.h>
 #include <errno.h>
@@ -26,6 +27,7 @@
 #include <time.h>
 #include <ev.h>
 // These need to be roughly in this order ;)
+#include "file.h"
 #include "dict.h"
 #include "config.h"
 #include "logger.h"

@@ -30,7 +30,7 @@ class Listener {
 };
 
 
-extern llist_t *Listeners;
+//extern llist_t *Listeners;
 
 // create configured listeners...
 extern bool create_listener(const char *uri);

@@ -34,7 +34,7 @@ struct modem_type_names modem_drivers[] = {
 // Our main thread //
 /////////////////////
 static void *modem_thread_main(void *arg) {
-   Log->Debug("Greetings from modem_thread!");
+   Log->Send(LOG_DEBUG, "Greetings from modem_thread!");
    // XXX: Do stuff
    while (true) {
       sleep(30);
@@ -51,11 +51,11 @@ bool init_modem_thread(void) {
       pthread_create(&modem_thread, NULL, modem_thread_main, arg);
       modem_running = true;
    } else {
-      Log->Warn("modem is already running, not restarting it.");
+      Log->Send(LOG_WARNING, "modem is already running, not restarting it.");
       return false;
    }
 
-   Log->Info("Succesfully started modem interface thread");
+   Log->Send(LOG_INFO, "Succesfully started modem interface thread");
    return true;
 }
 

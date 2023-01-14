@@ -70,11 +70,11 @@ bool Modem_ARDOP::SetModulationMode(ardop_mode_t tncmode) {
    size_t max_mode = (sizeof(ardop_mode_names) / sizeof(ardop_mode_names[0]));
 
    if (tnc_mode < ARDOP_MODE_NONE || tnc_mode > max_mode) {
-      Log->Crit("Requested ardop mode %d is not a valid mode (max: %d)", tncmode, max_mode);
+      Log->Send(LOG_CRIT, "Requested ardop mode %d is not a valid mode (max: %d)", tncmode, max_mode);
       return false;
    }
 
-   Log->Debug("Setting ARDOP mode to %s (%d)", ardop_mode_names[tncmode], tncmode);
+   Log->Send(LOG_DEBUG, "Setting ARDOP mode to %s (%d)", ardop_mode_names[tncmode], tncmode);
    return true;
 }
 

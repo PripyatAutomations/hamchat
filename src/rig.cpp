@@ -12,13 +12,13 @@ struct rig_driver_names rig_driver_names[] {
 };
 
 void Rig::Connect(void) {
-   Log->Info("radio%d: Connecting to rig...", this->id);
-   Log->Info("radio%d: driver: %d: model %lu", this->driver, this->model);
+   Log->Send(LOG_INFO, "radio%d: Connecting to rig...", this->id);
+   Log->Send(LOG_INFO, "radio%d: driver: %d: model %lu", this->driver, this->model);
 
    if (this->driver == RIG_DRIVER_HAMLIB) {
       this->hamlib = new Rig_Hamlib(this->model);
    } else {
-      Log->Crit("Unable to open rig driver %d, model %d", this->driver, this->model);
+      Log->Send(LOG_CRIT, "Unable to open rig driver %d, model %d", this->driver, this->model);
    }
 }
 
@@ -35,7 +35,7 @@ Rig::~Rig() {
          this->hamlib = NULL;
       }
    } else {
-      Log->Warn("Unsupoorted rig driver %d while unloading rig", this->driver);
+      Log->Send(LOG_WARNING, "Unsupoorted rig driver %d while unloading rig", this->driver);
    }
 }
 

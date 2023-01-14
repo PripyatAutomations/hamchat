@@ -71,14 +71,6 @@
 
 /////////////////
 
-enum LogLevel {
-   LOG_NONE = 0,
-   LOG_CRIT,
-   LOG_WARN,
-   LOG_INFO,
-   LOG_DEBUG
-};
-
 class Config {
    private:
       dict *data;

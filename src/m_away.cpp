@@ -32,9 +32,9 @@ bool m_away(Client *cptr, int argc, char **argv) {
       memset(cptr->away_msg, 0, away_sz);
       // and copy in the away message
       memcpy(cptr->away_msg, target, away_sz);
-      cptr->Send(":%s 306 %s :You have been marked as being away", cfg->Get("core.servername", "hamchat.local"), cptr->callsign);
+      cptr->Send(":%s 306 %s :You have been marked as being away", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign());
    } else { // clearing away
-      cptr->Send("%s 305 %s :You are no longer marked as being away.", cfg->Get("core.servername", "hamchat.local"), cptr->callsign);
+      cptr->Send("%s 305 %s :You are no longer marked as being away.", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign());
    }
    return true;
 }

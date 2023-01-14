@@ -1,23 +1,29 @@
-#if	!defined(_logging_h)
-#define	_logging_h
+#if	!defined(_logger_h)
+#define	_logger_h
+
+#define LOG_INVALID_STR "*invalid_level*"
+
+enum log_target_type { NONE = 0, LOG_syslog, LOG_stderr, LOG_file, LOG_fifo };
+typedef struct {
+  // private (do not modified)
+  enum log_target_type type;
+  FILE *fp;
+} LogHndl;
+
+//extern LogHndl *mainlog;
 
 class Logger {
     private:
         FILE *fp;
-        int Log(enum LogLevel loglevel, const char *str, va_list);
+        LogHndl *hndl;
+
     public:
         Logger(const char *path);
         ~Logger();
-        int Crit(const char *f, ...);
-        int Debug(const char *f, ...);
-        int Info(const char *f, ...);
-        int Warn(const char *f, ...);
+        bool Send(int level, const char *msg, va_list);
+        bool Send(int level, const char *msg, ...);
 };
 
-#if	!defined(_logger_c)
 extern Logger *Log;
-extern void log_init(const char *path);
 
-#endif
-
-#endif	// !defined(_logging_h)
+#endif	// !defined(_logger_h)

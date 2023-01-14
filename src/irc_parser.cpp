@@ -13,13 +13,13 @@ bool Client::Parse(void) {
    char *parv[MAX_ARGS];
 
    if (this->sock->recvbuf_lock) {
-      Log->Debug("<%d> Client::Parse called while recvbuf locked", this->sock->fd);
+      Log->Send(LOG_DEBUG, "<%d> Client::Parse called while recvbuf locked", this->sock->fd);
       return true;
    }
    // take the lock
    this->sock->recvbuf_lock = true;
 
-//   Log->Debug("<%d> Parsing buffer (%lu bytes): |%s|", this->sock->fd, strlen(this->sock->recvbuf), this->sock->recvbuf);
+//   Log->Send(LOG_DEBUG, "<%d> Parsing buffer (%lu bytes): |%s|", this->sock->fd, strlen(this->sock->recvbuf), this->sock->recvbuf);
 
    // clear pointer array
    memset(parv, 0, sizeof(parv));
@@ -69,14 +69,14 @@ bool Client::Parse(void) {
          if (eaten_bytes > 0) {
             bytes_consumed += eaten_bytes;
          } else {
-            Log->Debug("maths are hard? parser eaten_bytes = %lu", eaten_bytes);
+            Log->Send(LOG_DEBUG, "maths are hard? parser eaten_bytes = %lu", eaten_bytes);
             return false;
          }
          parv[0] = (char *)malloc(eaten_bytes);
          memset(parv[0], 0, eaten_bytes);
          memcpy(parv[0], buf, eaten_bytes);
          buf += eaten_bytes;
-//         Log->Debug("<%d> parsing prefix for message:  %d: eaten_bytes: %lu <%lu total consumed>", this->sock->fd, parc, eaten_bytes, bytes_consumed);
+//         Log->Send(LOG_DEBUG, "<%d> parsing prefix for message:  %d: eaten_bytes: %lu <%lu total consumed>", this->sock->fd, parc, eaten_bytes, bytes_consumed);
       }
    } else if (this->callsign[0] != '\0') {
       // use our callsign as it's been validated already
@@ -122,13 +122,13 @@ bool Client::Parse(void) {
    if (bytes_consumed > 0) {
       buf = (this->sock->recvbuf + bytes_consumed);
    } else {
-      Log->Crit("<%d> bytes_consumed < 0: %d", this->sock->fd, bytes_consumed);
+      Log->Send(LOG_CRIT, "<%d> bytes_consumed < 0: %d", this->sock->fd, bytes_consumed);
    }
 
-//   Log->Debug("<%d> buf: %x <%d> parc: %d // consumed: %lu", this->sock->fd, buf, strlen(buf), parc, bytes_consumed);
+//   Log->Send(LOG_DEBUG, "<%d> buf: %x <%d> parc: %d // consumed: %lu", this->sock->fd, buf, strlen(buf), parc, bytes_consumed);
 
    if (parc <= 1 || parv[1] == NULL) {
-      Log->Debug("<%d> Empty command", this->sock->fd);
+      Log->Send(LOG_DEBUG, "<%d> Empty command", this->sock->fd);
       goto cleanup;
    }
 
@@ -142,7 +142,7 @@ bool Client::Parse(void) {
             // does the command require the user to be registered?
             if (cp->registered) {
                if (!IRC_IsActive(this)) {
-                  Log->Debug("<%d> Got %s from unregistered user", this->sock->fd, parv[1]);
+                  Log->Send(LOG_DEBUG, "<%d> Got %s from unregistered user", this->sock->fd, parv[1]);
                   this->Send(":%s 451 %s :You have not registered", cfg->Get("core.servername", "hamchat.local"), (*this->callsign != '\0' ? this->callsign : " *"));
                   valid_cmd = true;
                   allowed_cmd = false;
@@ -160,17 +160,17 @@ bool Client::Parse(void) {
             // throw an error if too many arguments (this is a parser bug.. let's see if it even matters?)
             if ((parc - 1) > cp->max_args) {
                // XXX: Is there a numeric for this?
-               Log->Crit("<%d> too many parameters (%d > %d) for cmd %s in parser", this->sock->fd, parc, cp->max_args, cp->cmd_proto);
+               Log->Send(LOG_CRIT, "<%d> too many parameters (%d > %d) for cmd %s in parser", this->sock->fd, parc, cp->max_args, cp->cmd_proto);
                valid_cmd = false;
                break;
             }
 
             if (cp->cmd_func != NULL) {			// a valid command was found
-               Log->Debug("<%d> matched command %s in entry %d [%x] with handler %x", this->sock->fd, parv[1], i, cp, cp->cmd_func);
+               Log->Send(LOG_DEBUG, "<%d> matched command %s in entry %d [%x] with handler %x", this->sock->fd, parv[1], i, cp, cp->cmd_func);
                valid_cmd = true;
                break;
             } else {					// command lacks a handler - invalid
-               Log->Debug("<%d> matched command %s in entry %d [%x] but it has no handler defined", this->sock->fd, parv[1], i, cp);
+               Log->Send(LOG_DEBUG, "<%d> matched command %s in entry %d [%x] but it has no handler defined", this->sock->fd, parv[1], i, cp);
                valid_cmd = true;
                cp = NULL;
             }
@@ -180,27 +180,27 @@ bool Client::Parse(void) {
 
    // no command was found
    if (!valid_cmd) {
-      Log->Debug("<%d> no matching command for %s from client", this->sock->fd, parv[1]);
+      Log->Send(LOG_DEBUG, "<%d> no matching command for %s from client", this->sock->fd, parv[1]);
       this->Send(":%s 421 %s %s :Unknown command", cfg->Get("core.servername", "hamchat.local"), this->callsign, parv[1]);
    } else if (allowed_cmd) {
-//      Log->Debug("<%d> parc=%d 0=%s 1=%s 2=%s 3=%s 4=%s", this->sock->fd, parc, (parv[0] != NULL ? parv[0] : "NULL"), (parv[1] != NULL ? parv[1] : "NULL"), (parv[2] != NULL ? parv[2] : "NULL"), (parv[3] != NULL ? parv[3] : "NULL"));
+//      Log->Send(LOG_DEBUG, "<%d> parc=%d 0=%s 1=%s 2=%s 3=%s 4=%s", this->sock->fd, parc, (parv[0] != NULL ? parv[0] : "NULL"), (parv[1] != NULL ? parv[1] : "NULL"), (parv[2] != NULL ? parv[2] : "NULL"), (parv[3] != NULL ? parv[3] : "NULL"));
       int rv = cp->cmd_func(this, (parc - 1), parv);
-      Log->Debug("<%d> command %s gave result %s", this->sock->fd, parv[1], (rv ? "true" : "false"));
+      Log->Send(LOG_DEBUG, "<%d> command %s gave result %s", this->sock->fd, parv[1], (rv ? "true" : "false"));
    }
 
 
    // move the buffer up as needed
    if (bytes_consumed >= BUFFER_MAX) {
-      Log->Debug("--- zeroing sockbuf as full contents were consumed ---");
+      Log->Send(LOG_DEBUG, "--- zeroing sockbuf as full contents were consumed ---");
       memset(this->sock->recvbuf, 0, BUFFER_MAX);
    } else {
       char *move_start = this->sock->recvbuf + bytes_consumed;
       size_t move_len = BUFFER_MAX - bytes_consumed;
-      Log->Debug("--- memmove recvbuf contents down --- %x -> %x, %lu bytes (freed %lu bytes)", move_start, this->sock->recvbuf, move_len, bytes_consumed);
+      Log->Send(LOG_DEBUG, "--- memmove recvbuf contents down --- %x -> %x, %lu bytes (freed %lu bytes)", move_start, this->sock->recvbuf, move_len, bytes_consumed);
       void *rc = memmove(this->sock->recvbuf, move_start, move_len);
 
       if (rc == NULL)
-         Log->Debug("res: %d: %d: %s", rc, errno, strerror(errno));
+         Log->Send(LOG_DEBUG, "res: %d: %d: %s", rc, errno, strerror(errno));
    }
 
    this->sock->recvbuf_offset = 0;

@@ -95,9 +95,9 @@ extern const char *dict_get(dict *d, const char *key, const char *defval);
  *  @brief   Add a blob to the dictionary
  */
 extern int        dict_add_ts(dict *d, const char *key, const char *val, time_t ts);
-extern int        dict_add_blob(dict *d, const char *key, const void **ptr);
-extern int        dict_add_blob_ts(dict *d, const char *key, const void **ptr, time_t ts);
-extern void *dict_get_blob(dict *d, const char *key, const void **defval);
+extern int        dict_add_blob(dict *d, const char *key, void *ptr);
+extern int        dict_add_blob_ts(dict *d, const char *key, void *ptr, time_t ts);
+extern void *dict_get_blob(dict *d, const char *key, void *defval);
 
 /*
  *  @brief    Delete an item in a dictionary

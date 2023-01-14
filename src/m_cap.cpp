@@ -18,6 +18,6 @@ bool m_cap(Client *cptr, int argc, char **argv) {
    Log->Debug("client on %d sent CAP %s", cptr->sock->fd, argv[2]);
    cptr->Send(":%s CAP * LS :", cfg->Get("core.servername", "hamchat.local"));
 #endif
-   cptr->Send(":%s 421 %s CAP :Unknown command", cfg->Get("core.servername", "hamchat.local"), (*cptr->callsign != '\0' ? cptr->callsign : "*"));
+   cptr->Send(":%s 421 %s CAP :Unknown command", cfg->Get("core.servername", "hamchat.local"), (*cptr->GetCallsign() != '\0' ? cptr->GetCallsign() : "*"));
    return true;
 }

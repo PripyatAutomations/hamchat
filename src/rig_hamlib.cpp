@@ -14,7 +14,7 @@ Rig_Hamlib::Rig_Hamlib(rig_model_t model) {
    this->rig = rig_init(model);
 
    if (!this->rig) {
-      Log->Crit("Failed initializing rig");
+      Log->Send(LOG_CRIT, "Failed initializing rig");
       shutdown(-1);
    }
 
@@ -23,7 +23,7 @@ Rig_Hamlib::Rig_Hamlib(rig_model_t model) {
 //   rig_rmode = RIG_MODE_PKTUSB;
    int rc = rig_open(this->rig);
    if (rc != RIG_OK) {
-      Log->Crit("hamlib_open: error %d (%s)", rc, rigerror(rc));
+      Log->Send(LOG_CRIT, "hamlib_open: error %d (%s)", rc, rigerror(rc));
       shutdown(2);
    }
 }
@@ -37,9 +37,9 @@ bool Rig_Hamlib::GetPTT(void) {
    int rc = rig_get_ptt(this->rig, RIG_VFO_A, &this->ptt);
 
    if (rc == RIG_OK)
-      Log->Debug("read ptt: %s", (this->ptt ? "on" : "off"));
+      Log->Send(LOG_DEBUG, "read ptt: %s", (this->ptt ? "on" : "off"));
    else
-      Log->Debug("read ptt failed: %d (%s)", rc, rigerror(rc));
+      Log->Send(LOG_DEBUG, "read ptt failed: %d (%s)", rc, rigerror(rc));
 
    return false;
 }
@@ -47,7 +47,7 @@ bool Rig_Hamlib::GetPTT(void) {
 bool Rig_Hamlib::SetPTT(bool state) {
    int rc;
 
-   Log->Info("* Setting PTT to %s", (state ? "true" : "false"));
+   Log->Send(LOG_INFO, "* Setting PTT to %s", (state ? "true" : "false"));
 
    if (state) {
       rc = rig_set_ptt(this->rig, RIG_VFO_A, RIG_PTT_ON_DATA);
@@ -56,7 +56,7 @@ bool Rig_Hamlib::SetPTT(bool state) {
    }
 
    if (rc != RIG_OK ) {
-      Log->Warn("rig_set_ptt: error = %s \n", rigerror(rc));
+      Log->Send(LOG_WARNING, "rig_set_ptt: error = %s \n", rigerror(rc));
       return false;
    }
    return true;

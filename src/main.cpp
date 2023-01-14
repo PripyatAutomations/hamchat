@@ -13,6 +13,7 @@ struct ev_loop	*main_loop = EV_DEFAULT;
 
 // service all the irc clients
 static void service_irc_cb(EV_P_ ev_timer *w, int events) {
+#if	0
    llist_t *lp = Clients;
    do {
       if (lp == NULL)
@@ -25,10 +26,10 @@ static void service_irc_cb(EV_P_ ev_timer *w, int events) {
          if (cptr->sock->read_waiting) {
             // but only if there's a whole line available...
             if (strchr(cptr->sock->recvbuf, '\n') != NULL) {
-               Log->Debug("<%d> cptr has a new message waiting, parsing", cptr->sock->fd);
+               Log(LOG_DEBUG, "<%d> cptr has a new message waiting, parsing", cptr->sock->fd);
                cptr->Parse();
             } else {
-               Log->Debug("<%d> readwaiting but no newline", cptr->sock->fd);
+               Log(LOG_DEBUG, "<%d> readwaiting but no newline", cptr->sock->fd);
             }
             // Only do this if debugging
             cptr->sock->read_waiting = false;
@@ -43,17 +44,19 @@ static void service_irc_cb(EV_P_ ev_timer *w, int events) {
                cptr->Send("PING :%lu", cptr->last_ping);
             } else if (!cptr->got_pong && (now - cptr->last_ping > IRC_PING_TIMEOUT)) {
                // if ping time has been exceeded and we didn't g
-               Log->Debug("<%d> PING timeout %lu", cptr->sock->fd, cptr->last_ping);
+               Log(LOG_DEBUG, "<%d> PING timeout %lu", cptr->sock->fd, cptr->last_ping);
                cptr->SendToCommonChannels(":%s QUIT :Ping timeout (%lu) seconds", cptr->callsign, IRC_PING_TIMEOUT);
                delete cptr;
                return;
             }
          }
       } else {
-         Log->Crit("invalid llist item %x in Clients list <%x> has NULL ptr", lp, Clients);
+         Log(LOG_CRIT, "invalid llist item %x in Clients list <%x> has NULL ptr", lp, Clients);
       }
       lp = lp->next;
    } while(lp != NULL);
+#endif
+
 }
 
 static void tick_cb(EV_P_ ev_timer *w, int revents) {
@@ -78,8 +81,8 @@ int main(int argc, char **argv) {
    atexit(shutdown);
 
    // Bring up logging as early as possible
-   log_init(cfg->Get("path.logfile", "hamchat.log"));
-   Log->Info("hamchat %s starting up. Good luck!", VERSION);
+   Log = new Logger(cfg->Get("path.logfile", "file:///tmp/hamchat.log"));
+   Log->Send(LOG_INFO, "hamchat %s starting up. Good luck!", VERSION);
 
    // Start up listeners
    cfg->ParseSection("listen");
@@ -96,13 +99,13 @@ int main(int argc, char **argv) {
    ev_timer_init(&tick_timer, tick_cb, 1, 1);
    ev_timer_start(main_loop, &tick_timer);
 
-   // Initialize rigs
+   // Initialize radios
    cfg->ParseSection("radio");
 
-   // heartbeat messages
+   // setup heartbeat messages
    heartbeat = new Heartbeat();
 
-   Log->Info("We're up and running with pid %d, good luck and godspeed!", getpid());
+   Log->Send(LOG_INFO, "We're up and running with pid %d, good luck and godspeed!", getpid());
    ev_run(main_loop, 0);
 
    // cleanup and exit gracefully ;)

@@ -7,7 +7,6 @@
 
 extern bool is_valid_callsign(const char *callsign);
 
-
 static inline const char *__fd_to_str(int fd) {
     static char itoa_buf[10];
     memset(itoa_buf, 0, 10);
