@@ -1,6 +1,12 @@
 #include "hamchat.h"
 
-
+//
+// Delivers a private message
+//
+// XXX: We need to determine if the destination is local or not
+// XXX: For local destinations, deliver it directly by socket
+// XXX: Try ip links next
+// XXX: Try to deliver via transport_modem/transport_kiss (RF) either directly or relayed
 bool do_privmsg(Client *cptr, int argc, char **argv, bool is_notice) {
     char *target = argv[2];
     char *msg = argv[3];
@@ -50,6 +56,7 @@ bool do_privmsg(Client *cptr, int argc, char **argv, bool is_notice) {
            cptr->Send(":%s 301 %s %s :%s", cfg->Get("core.servername", "hamchat.local"), cptr->GetCallsign(), dcptr->GetCallsign(), dcptr->away_msg);
         }
 
+        // deliver the message
         dcptr->Send(":%s!%s@%s %s %s :%s", cptr->GetCallsign(), cptr->username, cptr->hostname, (is_notice ? "NOTICE" : "PRIVMSG"), dcptr->GetCallsign(), argv[3]);
     }
     cptr->last_msg = now;

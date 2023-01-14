@@ -7,6 +7,9 @@ class Socket {
       Socket(const char *uri);
       ~Socket();
       int fd;
+      int port;
+      char host[HOST_NAME_MAX+1];
+      char uri[HOST_NAME_MAX+16];
       char sendbuf[BUFFER_MAX];
       char recvbuf[BUFFER_MAX];
       bool sendbuf_lock;

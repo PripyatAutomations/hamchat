@@ -22,4 +22,18 @@
  *       |             |....... Indirect neighbor W9ABC (2)
  *       |........Reachable neighbor K9ABC (1) *
  */
- 
+
+// This tends to prefer IP links where possible, due to their higher bandwidth (lower cost)
+Transport *least_cost_route(Client *src, Client *dest, int max_cost, int priority) {
+   return NULL;
+}
+
+// This tries to send directly or via max_hops hops at most
+Transport *shortest_path_route(Client *src, Client *dest, int max_hops, int priority) {
+   return NULL;
+}
+
+// tries to reliably deliver the message, even if slower
+Transport *most_reliable_route(Client *src, Client *dest, int max_cost, int priority) {
+   return NULL;
+}

@@ -74,6 +74,7 @@ hamchat_objs += rig_hamlib.o
 # Provides rig controls/status in channels
 hamchat_objs += rig_irc_channel.o
 #hamchat_objs += rig_serial_ptt.o
+hamchat_objs += routing.o
 hamchat_objs += spotting.o
 hamchat_objs += spotting_db.o
 #hamchat_objs += spotting_pskreporter.o

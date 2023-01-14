@@ -37,7 +37,7 @@ bool m_part(Client *cptr, int argc, char **argv) {
 
       if (chptr == NULL) {
          // no such channel
-         Log->Send(LOG_DEBUG, "<%s> sent PART for channel they aren't in (%s)", cptr->GetCallsign(), chname);
+         Log->Send(LOG_DEBUG, "<%s> sent PART for channel they aren't in (%s) - Doesn't exist", cptr->GetCallsign(), chname);
       } else {
          return chptr->RemoveUser(cptr, part_msg);
       }

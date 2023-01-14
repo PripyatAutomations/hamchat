@@ -1,4 +1,5 @@
 #include "hamchat.h"
+#include <netdb.h>
 dict *Listeners = NULL;
 
 int set_nonblocking(int fd) {
@@ -115,9 +116,82 @@ Socket::Socket(int fd) {
    }
 };
 
+
 Socket::Socket(const char *uri) {
-   // Parse the uri and decide what kind of IP socket to create
+   int fd;
+   const char *start = uri, *sep;
+   enum { UDP = 0, TCP, FIFO } type;
+   struct hostent *hostnm;
+   struct sockaddr_in server;
+
+   // save the whole URI to the object
+   size_t cpysz = strlen(uri);
+   if (cpysz > sizeof(this->uri))
+      cpysz = sizeof(this->uri);
+   memcpy(this->uri, uri, cpysz);
+
+   // parse out protocol
+   if (strncasecmp(uri, "tcp://", 6) == 0) {
+     type = TCP;
+     start = uri + 6;
+   } else if (strncasecmp(uri, "udp://", 6) == 0) {
+     type = UDP;
+     start = uri + 6;
+   } else if (strncasecmp(uri, "fifo://", 7) == 0) {
+     type = FIFO;
+     start = uri + 7;
+   } 
+
+   // to do the needful for IP transports
+   if (type == TCP || type == UDP) {
+      // extract the port
+      sep = strchr(start, ':');
+
+      if (sep == NULL) {
+         Log->Send(LOG_CRIT, "invalid socket address: %s", uri);
+         delete this;
+      }
+
+      // seperator is valid!
+      if (sep > uri) {
+         // extract and save port
+         int port;
+         port = atoi(sep+1);
+
+         // save hostname
+         memset(this->host, 0, HOST_NAME_MAX);
+         size_t cpylen = sep - uri;
+         if (cpylen > 0)
+            memcpy(this->host, uri, cpylen);
+
+         if (port == 0) {
+            Log->Send(LOG_CRIT, "parsing listener %s failed: port '%s' invalid (0)", this->host, port);
+            shutdown(101);
+         }
+         this->port = port;
+      }
+
+      // resolve the hostname
+      hostnm = gethostbyname(this->host);
+      if (hostnm == NULL) {
+         Log->Send(LOG_CRIT, "couldnt resolve hostname %s", this->host);
+      }
+   } else {
+     Log->Send(LOG_ERR, "* Invalid socket type selected (%d): %s", type, uri);
+     delete this;
+   }
+
+   if (type == TCP) {
+      Log->Send(LOG_INFO, "* Connecting to tcp://%s:%d", host, port);
+   } else if (type == UDP) {
+      Log->Send(LOG_INFO, "* Connecting to udp://%s:%d", host, port);
+   }
+
    // Create the socket connection
+   if (type == TCP)
+      this->fd = socket(PF_INET, SOCK_STREAM, 0);
+   else
+      this->fd = socket(PF_INET, SOCK_DGRAM, 0); 
 }
 
 Socket::~Socket() {

@@ -94,3 +94,5 @@ enabled=true
 allow_arq=false
 allow_fec=true
 max_baudrate=300
+cmd_port=tcp://127.0.0.1:8515
+cmd_data=tcp://127.0.0.1:8516
