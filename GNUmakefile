@@ -81,8 +81,7 @@ hamchat_objs += spotting_db.o
 #hamchat_objs += spotting_rbn.o
 hamchat_objs += statistics.o
 hamchat_objs += transport.o
-#hamchat_objs += transport_ax25.o
-hamchat_objs += transport_ip.o
+hamchat_objs += transport_socket.o
 #hamchat_objs += transport_kiss.o
 hamchat_objs += transport_modem.o
 

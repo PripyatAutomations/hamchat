@@ -1,13 +1,18 @@
+/*
+ * Transport layer:
+ *	Here we try to blur the difference between a socket/modem/other similar connection.
+ *
+ * This could be used for the data stream to/from a soft modem, while handling control elsewhere.
+ */
 #if	!defined(_transport_h)
 #define	_transport_h
 
-#include "transport_ip.h"
+#include "transport_socket.h"
 #include "transport_modem.h"
 
 enum transport_type {
    TRANSPORT_NONE = 0,
-   TRANSPORT_AX25,
-   TRANSPORT_IP,
+   TRANSPORT_SOCKET,
    TRANSPORT_KISS,
    TRANSPORT_MODEM
 };

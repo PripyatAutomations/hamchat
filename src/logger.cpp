@@ -92,19 +92,6 @@ bool Logger::Send(int level, const char *msg, va_list ap) {
 }
 
 Logger::Logger(const char *path) {
-/*
-   FILE *fp = NULL;
-
-   if ((fp = fopen(path, "w+")) != NULL) {
-      this->fp = fp;
-       printf("Opened logfile %s!\n", path);
-   } else {
-      fprintf(stderr, "hamchat: Failed opening log file %s\n", path);
-      // disable daemonizing
-      cfg->Add("core.daemonize", "false");
-   }
-}
-*/
    this->log_hndl = (LogHndl *)malloc(sizeof(LogHndl));
 
    if (strcasecmp(path, "syslog") == 0) {
