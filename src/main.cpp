@@ -1,14 +1,11 @@
 #define	_main_cpp
 #include "hamchat.h"
 
-Config *cfg;
-
-// Our current time
+Database *main_db = NULL;
+Config *cfg = NULL;
+Logger *Log = NULL;
 time_t now = time(NULL);
-
-// libev stuff
-ev_timer tick_timer,
-         service_irc_timer;
+ev_timer tick_timer, service_irc_timer, stats_timer;
 struct ev_loop	*main_loop = EV_DEFAULT;
 
 // service all the irc clients
@@ -26,10 +23,10 @@ static void service_irc_cb(EV_P_ ev_timer *w, int events) {
          if (cptr->sock->read_waiting) {
             // but only if there's a whole line available...
             if (strchr(cptr->sock->recvbuf, '\n') != NULL) {
-               Log(LOG_DEBUG, "<%d> cptr has a new message waiting, parsing", cptr->sock->fd);
+               Log->Send(LOG_DEBUG, "<%d> cptr has a new message waiting, parsing", cptr->sock->fd);
                cptr->Parse();
             } else {
-               Log(LOG_DEBUG, "<%d> readwaiting but no newline", cptr->sock->fd);
+               Log->Send(LOG_DEBUG, "<%d> readwaiting but no newline", cptr->sock->fd);
             }
             // Only do this if debugging
             cptr->sock->read_waiting = false;
@@ -44,14 +41,14 @@ static void service_irc_cb(EV_P_ ev_timer *w, int events) {
                cptr->Send("PING :%lu", cptr->last_ping);
             } else if (!cptr->got_pong && (now - cptr->last_ping > IRC_PING_TIMEOUT)) {
                // if ping time has been exceeded and we didn't g
-               Log(LOG_DEBUG, "<%d> PING timeout %lu", cptr->sock->fd, cptr->last_ping);
+               Log->Send(LOG_DEBUG, "<%d> PING timeout %lu", cptr->sock->fd, cptr->last_ping);
                cptr->SendToCommonChannels(":%s QUIT :Ping timeout (%lu) seconds", cptr->callsign, IRC_PING_TIMEOUT);
                delete cptr;
                return;
             }
          }
       } else {
-         Log(LOG_CRIT, "invalid llist item %x in Clients list <%x> has NULL ptr", lp, Clients);
+         Log->Send(LOG_CRIT, "invalid llist item %x in Clients list <%x> has NULL ptr", lp, Clients);
       }
       lp = lp->next;
    } while(lp != NULL);
@@ -61,6 +58,10 @@ static void service_irc_cb(EV_P_ ev_timer *w, int events) {
 
 static void tick_cb(EV_P_ ev_timer *w, int revents) {
    now = time(NULL);
+}
+
+static void statistics_dump_cb(EV_P_ ev_timer *w, int events) {
+//   Channels[0]->DumpToDb(NULL, "channels");
 }
 
 // Main loop
@@ -88,7 +89,7 @@ int main(int argc, char **argv) {
    cfg->ParseSection("listen");
 
    // Main db
-   db = new Database(cfg->Get("path.db_main", "hamchat.db"), cfg->Get("path.db_main_schema", "init.sql"));
+   main_db = new Database(cfg->Get("path.db_main", "hamchat.db"), cfg->Get("path.db_main_schema", "init.sql"));
    init_modem_thread();
 
    // this loop will service clients every time it's called
@@ -98,6 +99,14 @@ int main(int argc, char **argv) {
    // start out periodic timer tick
    ev_timer_init(&tick_timer, tick_cb, 1, 1);
    ev_timer_start(main_loop, &tick_timer);
+
+   // dump statistics and database backups from time to time..
+   int stats_time = cfg->GetInt("stats.dump_interval", 1200);
+
+   if (stats_time > 0) {
+      ev_timer_init(&stats_timer, statistics_dump_cb, stats_time, stats_time);
+      ev_timer_start(main_loop, &stats_timer);
+   }
 
    // Initialize radios
    cfg->ParseSection("radio");

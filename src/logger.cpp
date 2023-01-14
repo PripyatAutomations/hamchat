@@ -1,9 +1,6 @@
 #include "hamchat.h"
 // XXX: Add support for logging to channels
 
-Logger *Log = NULL;
-
-static LogHndl *mainlog = NULL;
 static struct log_levels {
    const char *str;
    int level;
@@ -67,16 +64,16 @@ bool Logger::Send(int level, const char *msg, va_list ap) {
       return false;
 
 
-   if (mainlog) {
-      if (mainlog->type == LOG_syslog) {
+   if (this->log_hndl) {
+      if (this->log_hndl->type == LOG_syslog) {
          vsyslog(level, msg, ap);
-      } else if (mainlog->type != NONE) {
+      } else if (this->log_hndl->type != NONE) {
          memset(buf, 0, 4096);
          vsnprintf(buf, 4095, msg, ap);
       }
 
-      if (mainlog->type != LOG_stderr && mainlog->fp)
-         fp = mainlog->fp;
+      if (this->log_hndl->type != LOG_stderr && this->log_hndl->fp)
+         fp = this->log_hndl->fp;
    }
 
    // if we aren't in daemon mode, write to stdout
@@ -108,48 +105,45 @@ Logger::Logger(const char *path) {
    }
 }
 */
-   if (mainlog)
-      free(mainlog);
-
-   mainlog = (LogHndl *)malloc(sizeof(LogHndl));
+   this->log_hndl = (LogHndl *)malloc(sizeof(LogHndl));
 
    if (strcasecmp(path, "syslog") == 0) {
-      mainlog->type = LOG_syslog;
+      this->log_hndl->type = LOG_syslog;
       openlog("hamchat", LOG_NDELAY|LOG_PID, LOG_DAEMON);
    } else if (strcasecmp(path, "stderr") == 0) {
-      mainlog->type = LOG_stderr;
-      mainlog->fp = stderr;
+      this->log_hndl->type = LOG_stderr;
+      this->log_hndl->fp = stderr;
    } else if (strncasecmp(path, "fifo://", 7) == 0) {
       if (is_fifo(path + 7) || is_file(path + 7))
          unlink(path + 7);
 
       mkfifo(path+7, 0600);
 
-      if (!(mainlog->fp = fopen(path + 7, "w"))) {
+      if (!(this->log_hndl->fp = fopen(path + 7, "w"))) {
          this->Send(LOG_ERR, "Failed opening log fifo '%s' %s (%d)", path+7, errno, strerror(errno));
-         mainlog->fp = stderr;
+         this->log_hndl->fp = stderr;
       } else
-         mainlog->type = LOG_fifo;
+         this->log_hndl->type = LOG_fifo;
    } else if (strncasecmp(path, "file://", 7) == 0) {
-      if (!(mainlog->fp = fopen(path + 7, "w+"))) {
+      if (!(this->log_hndl->fp = fopen(path + 7, "w+"))) {
          this->Send(LOG_ERR, "failed opening log file '%s' %s (%d)", path+7, errno, strerror(errno));
-         mainlog->fp = stderr;
+         this->log_hndl->fp = stderr;
       } else
-         mainlog->type = LOG_file;
+         this->log_hndl->type = LOG_file;
    }
 }
 
 Logger::~Logger() {
-   if (mainlog == NULL)
+   if (this->log_hndl == NULL)
       return;
 
-   if (mainlog->type == LOG_file || mainlog->type == LOG_fifo) {
-      fflush(mainlog->fp);
-      fclose(mainlog->fp);
-   } else if (mainlog->type == LOG_syslog) {
+   if (this->log_hndl->type == LOG_file || this->log_hndl->type == LOG_fifo) {
+      fflush(this->log_hndl->fp);
+      fclose(this->log_hndl->fp);
+   } else if (this->log_hndl->type == LOG_syslog) {
       closelog();
    }
 
-   free(mainlog);
-   mainlog = NULL;
+   free(this->log_hndl);
+   this->log_hndl = NULL;
 }

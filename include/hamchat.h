@@ -46,16 +46,17 @@
 #include "statistics.h"
 #include "rig.h"
 
+// src/daemonize.cpp
 extern int daemonize(void);
 extern void shutdown(void);
 extern void shutdown(int fatal);
 extern void init_signals(void);
+
+// src/main.cpp
 extern time_t now;
-
-extern Database *db;
-extern Rig_Hamlib *hamlib_rig;
-
+extern Database *main_db;
 extern time_t now;
 extern struct ev_loop *main_loop;
+extern Logger *Log;
 
 #endif	// !defined(_hamchat_h)

@@ -7,8 +7,55 @@
 dict *Channels = NULL;
 
 // Someday we'll implement dumping the channel db to sql (and loading from it!)
-bool Channel::DumpToDb(Database *db, const char *table) {
-   return false;
+bool Channel::DumpToDb(Database *db, const char *section) {
+   struct stat sb;
+   FILE *fp;
+   const char *path = cfg->Get("path.channel_dump", NULL);
+   bool keep_old_chan_stats = cfg->GetBool("chan.dump.keep_old", false);
+
+   if (path == NULL)
+      return true;
+
+   if (!keep_old_chan_stats && stat(path, &sb) == 0) {
+      // statistics file already exists, try to unlink it
+      if (unlink(path)) {
+         Log->Send(LOG_WARNING, "failed removing old channels dump file %s: %d (%s)", path, errno, strerror(errno));
+         return false;
+      }
+   }
+
+   if ((fp = fopen(path, "a+")) == NULL) {
+      Log->Send(LOG_WARNING, "failed opening channels dump file %s: %d (%s)", path, errno, strerror(errno));
+      return false;
+   }
+
+   // from dict_dump();
+   const char *key;
+   const char *val;
+   int    rank = 0;
+   int    errors = 0;
+   time_t ts = 0;
+
+   if (!Channels || !fp)
+      return false;
+
+   while (true) {
+      rank = dict_enumerate(Channels, rank, &key, &val, &ts);
+
+      if (rank < 0)
+         break;
+
+      Channel *chptr = (Channel *)val;
+      // emit output here in CSV format
+      fprintf(fp, "%s\n", chptr->name);
+   }
+
+   // XXX: Import the CSV into the sqlite db as needed
+   // XXX: fseek(fp, 0, SEEK_SET);
+   // XXX: scan into sqlite   
+   fflush(fp);
+   fclose(fp);
+   return true;
 }
 
 bool load_channels_from_db(Database *db, const char *table) {

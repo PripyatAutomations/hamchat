@@ -1,5 +1,4 @@
 #include "hamchat.h"
-Database *db = NULL;
 
 Database::~Database() {
  sqlite3_close(this->db);
