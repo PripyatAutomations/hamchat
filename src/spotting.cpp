@@ -5,7 +5,12 @@
 //
 
 SpotReport::SpotReport() {
+   // we always initialize the the database target
    this->spot_db = new Spotting_DB();
+
+   // XXX: add pskreporter output
+   // XXX: add rbn output?
+   // XXX: Other aggregators?
 }
 
 SpotReport::~SpotReport() {

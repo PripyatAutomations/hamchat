@@ -12,17 +12,19 @@
 
 enum transport_type {
    TRANSPORT_NONE = 0,
-   TRANSPORT_SOCKET,
-   TRANSPORT_KISS,
-   TRANSPORT_MODEM
+   TRANSPORT_SOCKET,		// socket()
+   TRANSPORT_KISS,		// KISS TNC on serial
+   TRANSPORT_MODEM		// software modem, either builtin or external via modem_*
 };
 
 // This defines the connection to transport and presents things as a simple in/out data stream
 class Transport {
    private:
-      Socket *socket;
-      Listener *listener;
-      Transport_Modem *transport_modem;
+      // TRANSPORT_SOCKET
+         Socket *socket;
+         Listener *listener;
+      // TRANSPORT_MODEM
+         Transport_Modem *transport_modem;
    public:
       enum transport_type transport_type;
       Transport(enum transport_type transport_type);

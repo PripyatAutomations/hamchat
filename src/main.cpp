@@ -86,6 +86,7 @@ static void tick_cb(EV_P_ ev_timer *w, int revents) {
 }
 
 static void statistics_dump_cb(EV_P_ ev_timer *w, int events) {
+   dump_statistics(cfg->Get("path.statsfile", NULL));
 //   Channels[0]->DumpToDb(NULL, "channels");
 }
 

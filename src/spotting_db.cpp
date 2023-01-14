@@ -18,6 +18,11 @@ struct spot_mode_names spot_mode_names[] = {
 //
 
 Spotting_DB::Spotting_DB() {
+   this->db = new Database("spotting");
+   if (this->db == NULL) {
+      Log->Send(LOG_CRIT, "fatal error accesing spotting db");
+      abort();
+   }
 }
 
 Spotting_DB::~Spotting_DB() {
