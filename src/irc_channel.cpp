@@ -75,6 +75,7 @@ Channel::Channel(Client *cptr, const char *name) {
 }
 
 Channel::~Channel() {
+   dict_free(this->members);
    // Remove ourself from the Channels list
    dict_del(Channels, this->name);
 }

@@ -8,6 +8,31 @@ time_t now = time(NULL);
 ev_timer tick_timer, service_irc_timer, stats_timer;
 struct ev_loop	*main_loop = EV_DEFAULT;
 
+#if	0
+int dict_dump(dict *d, FILE *out) {
+    const char *key;
+    const char *val;
+    int    rank = 0;
+    int    errors = 0;
+    time_t ts = 0;
+
+    if (!d || !out)
+       return errors;
+
+    while (1) {
+       rank = dict_enumerate(d, rank, &key, &val, &ts);
+
+       if (rank < 0)
+          break;
+
+       if (fprintf(out, "%s [%lu]: %s\n", key, ts, val ? val : "UNDEF") < 0)
+          errors++;
+    }
+
+    return errors;
+}
+#endif
+
 // service all the irc clients
 static void service_irc_cb(EV_P_ ev_timer *w, int events) {
 #if	0
@@ -89,7 +114,7 @@ int main(int argc, char **argv) {
    cfg->ParseSection("listen");
 
    // Main db
-   main_db = new Database(cfg->Get("path.db_main", "hamchat.db"), cfg->Get("path.db_main_schema", "init.sql"));
+   main_db = new Database("main");
    init_modem_thread();
 
    // this loop will service clients every time it's called
@@ -102,7 +127,6 @@ int main(int argc, char **argv) {
 
    // dump statistics and database backups from time to time..
    int stats_time = cfg->GetInt("stats.dump_interval", 1200);
-
    if (stats_time > 0) {
       ev_timer_init(&stats_timer, statistics_dump_cb, stats_time, stats_time);
       ev_timer_start(main_loop, &stats_timer);

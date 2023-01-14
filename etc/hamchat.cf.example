@@ -2,27 +2,76 @@
 core.daemonize=false
 ;core.daemonize=true
 core.servername=irc.hamchat.local
-core.loglevel=debug
-path.db_main=etc/hamchat.db
-path.db_main_schema=etc/hamchat.sql
-path.logfile=hamchat.log
-path.motd=etc/hamchat.motd
-path.pidfile=hamchat.pid
-path.statsfile=etc/hamchat.stats
-path.db_chandir=etc/channels/
-path.db_userdir=etc/users/
-heartbeat.delay=60
-heartbeat.interval=600
+
+;;;;;;;;;;;
+; Station ;
+;;;;;;;;;;;
+; Station (not operator) callsign
 station.callsign=N0CALL
+; Station gridsquare
 station.gridsquare=AA00aa
+; TX power to initialize at start
 station.default_txpower=5
-admin.line1=Middle of Nowhere, No State, United States
+; for /ADMIN command
+admin.line1=Some City, Some State, Some Country
 admin.line2=This server is an experimental instance of hamchat
 admin.line3=Please report bugs.
 
+;;;;;;;;;;;
+; Logging ;
+;;;;;;;;;;;
+core.loglevel=debug
+; options: debug|info|notice|warning|error|critical|alert|emergency
+log.level=debug
+
+;;;;;;;;;;;;;;;;;;;;;
+; Heartbeat Network ;
+;;;;;;;;;;;;;;;;;;;;;
+; how long to wait before sending first heartbeat
+heartbeat.delay=60
+; how long to wait between heartbeats
+heartbeat.interval=600
+
+;;;;;;;;;
+; Paths ;
+;;;;;;;;;
+path.db_main=etc/hamchat.db
+path.db_main_schema=etc/hamchat.sql
+path.logfile=file://hamchat.log
+path.motd=etc/hamchat.motd
+path.pidfile=hamchat.pid
+path.statsfile=etc/hamchat.stats
+
+;;;;;;;;;;;;;;
+; statistics ;
+;;;;;;;;;;;;;;
+; if set to 0, disables. default 1200
+stats.dump_interval=300
+
+;;;;;;;;;
+; Users ;
+;;;;;;;;;
+path.db_userdir=etc/users/
+
+;;;;;;;;;;;;
+; Spotting ;
+;;;;;;;;;;;;
+spotting=true
+spotting.db=true
+path.db_spotting=etc/spots.db
+path.db_spotting_schema=etc/spots.sql
+
+;;;;;;;;;;;;
+; Channels ;
+;;;;;;;;;;;;
+path.db_chandir=etc/channels/
+path.channel_dump=etc/channels/dump.csv
+; if set to false, delete stats file before dumping to it
+chan.dump.keep_old=true
+
 [listen]
-10.11.0.3:6660
-127.0.0.1:6660
+*:6660
+127.0.0.1:6667
 
 [radio0]
 driver=hamlib
@@ -32,7 +81,7 @@ model=2
 ; enabled must be last option in section, sorry.
 enabled=true
 
-#[radio0]
+#[radio1]
 #description=simple transceiver without CAT controls
 #mode=serial-ptt
 #port=/dev/ttyUSB0

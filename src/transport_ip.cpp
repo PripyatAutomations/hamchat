@@ -1,5 +1,6 @@
 #include "hamchat.h"
-//llist_t *Listeners = NULL;
+
+dict *Listeners = NULL;
 
 int set_nonblocking(int fd) {
    int flags;
@@ -15,7 +16,6 @@ void sock_read_cb(EV_P_ ev_io *w, int revents) {
    int read_tries_left = 1;
    char *bp = NULL;
 
-
    // find the client structure or bail
    if ((cptr = find_client(w->fd)) == NULL) {
       Log->Send(LOG_CRIT, "<%d> sock_read_cb was called, but no Client * found, kicking!", w->fd);
@@ -29,6 +29,10 @@ void sock_read_cb(EV_P_ ev_io *w, int revents) {
       return;
    }
 
+   if (cptr->sock == NULL) {
+      Log->Send(LOG_CRIT, "wtf?! cptr->sock NULL on %d - exiting!", w->fd);
+      abort();
+   }
    // we shouldn't read into the buffer while parser is running...
    // this shouldn't happen and means someone screwed up a lock
    if (cptr->sock->recvbuf_lock) {
@@ -127,8 +131,6 @@ Socket::~Socket() {
 //////////////////////////////////////////
 // A simple socket listener using libev //
 //////////////////////////////////////////
-
-
 static void sock_pending_cb(EV_P_ ev_io *w, int revents) {
    int client_fd = -1;
 
@@ -170,6 +172,10 @@ static void sock_pending_cb(EV_P_ ev_io *w, int revents) {
 Listener::Listener(const char *addr) {
    const char *sep, *pp;
 
+   if (Listeners == NULL) {
+      Listeners = dict_new();
+   }
+
    if (addr == NULL) {
       this->port = 6660;
    }
@@ -177,7 +183,7 @@ Listener::Listener(const char *addr) {
    sep = strchr(addr, ':');
 
    if (sep == NULL) {
-//      Log->Send(LOG_CRIT, "invalid listener configuration: %s", addr);
+      Log->Send(LOG_CRIT, "invalid listener configuration: %s", addr);
       shutdown(100);
    }
 
@@ -188,7 +194,7 @@ Listener::Listener(const char *addr) {
       int ptmp = atoi(pp);
 
       if (ptmp == 0) {
-//         Log->Send(LOG_CRIT, "parsing listener %s failed: port '%s' invalid (0)", addr, port);
+         Log->Send(LOG_CRIT, "parsing listener %s failed: port '%s' invalid (0)", addr, port);
          shutdown(101);
       }
       this->port = ptmp;
@@ -196,7 +202,6 @@ Listener::Listener(const char *addr) {
 
       if (cpylen > 0)
          memcpy(this->host, addr, cpylen);
-
    }
 
    this->sock = new Socket(socket(PF_INET, SOCK_STREAM, 0));
@@ -226,30 +231,19 @@ Listener::Listener(const char *addr) {
       Log->Send(LOG_CRIT, "error binding listener %s:%d: %d (%s)", this->host, this->port, errno, strerror(errno));
       shutdown(120);
    }
+
+
+   // and start non-blocking listener!
    set_nonblocking(this->sock->fd);
    listen(this->sock->fd, LISTEN_BACKLOG);
+
+   // add it to our listener list
+   char buf[16];
+   memset(buf, 0, 16);
+   snprintf(buf, 15, "%d", this->sock->fd);
+   dict_add_blob(Listeners, buf, (void *)this);
+
+   // let libev handle events on the socket   
    ev_io_init(&this->sock->io, sock_pending_cb, this->sock->fd, EV_READ);
-
-   struct ev_loop *loop = EV_DEFAULT;
-   ev_io_start(EV_A_ &this->sock->io);
-}
-
-//////////////////////
-// create listeners //
-//////////////////////
-bool create_listener(const char *uri) {
-   Listener *lptr = new Listener(uri);
-
-#if	0
-   if (Listeners == NULL) {
-      Listeners = llist_append(NULL, (void *)&lptr);
-   } else {
-      llist_append(Listeners, (void *)&lptr);
-   }
-
-   if (Listeners != NULL)
-      return true;
-#endif
-
-   return false;
+   ev_io_start(main_loop, &this->sock->io);
 }

@@ -81,7 +81,7 @@ bool Config::ParseSection(const char *section) {
          this->Add(key, val);
       } else if (strncasecmp(this_section, "listen", 6) == 0) {
          // create a Listener and append it to Listeners
-         create_listener(skip);
+         Listener *lp = new Listener(skip);
       } else if (strncasecmp(this_section, "radio", 5) == 0) {
          int rig_id = atoi(this_section+5);
          if (rig_id < 0 || rig_id > max_rigs) {
@@ -99,26 +99,33 @@ bool Config::ParseSection(const char *section) {
          key = strtok(skip, "= \n");
          val = strtok(NULL, "= \n");
 
-         // extern struct rig_driver_names rig_driver_names[];
          if (strncasecmp(key, "driver", 6) == 0) {
+            Log->Send(LOG_DEBUG, "<radio%d> Looking for driver: %s", rig_id, val);
             // match in rig_driver
-            int driver_name_ent = sizeof(struct rig_driver_names)/sizeof(rig_driver_names[0]);
-            for (int i = 0; i < driver_name_ent; i++) {
-               struct rig_driver_names *rd = &rig_driver_names[i];
+            for (int i = 0; i < 16; i++) {
+               if (rig_driver_names[i].name == NULL)
+                  continue;;
+
+               struct rig_driver_name *rd = &rig_driver_names[i];
+
+               Log->Send(LOG_INFO, "<radio%d> Trying %d: %d: %s", rig_id, i, rd->driver, rd->name);
 
                if (strncasecmp(val, rd->name, strlen(rd->name)) == 0) {
-                  Log->Send(LOG_DEBUG, "rdn: %x rdd: %i rrid: %d rrd: %x", rd->name, rd->driver, rig_id, rigs[rig_id]->driver);
-                  rigs[rig_id]->driver = rig_driver_names[i].driver;
+//                  Log->Send(LOG_DEBUG, "<radio%d> rdn: %x rdd: %i rrid: %d rrd: %x", rig_id, rd->name, rd->driver, rig_id, rigs[rig_id]->driver);
+                  rigs[rig_id]->driver = rd->driver;
                   Log->Send(LOG_INFO, "<radio%d> set driver: %s (%d)", rig_id, rd->name, rd->driver);
                   break;
                } else
-                  Log->Send(LOG_DEBUG, "skipping %s", rd->name);
+                  Log->Send(LOG_DEBUG, "<radio%d> skipping %s", rig_id, rd->name);
             }
+            continue;
          } else if (strncasecmp(key, "model", 5) == 0) {
             rigs[rig_id]->model = atoi(val);
             Log->Send(LOG_INFO, "<radio%d> set model: %d", rig_id, rigs[rig_id]->model);
+            continue;
          } else if (strncasecmp(key, "enabled", 7) == 0) {
             rigs[rig_id]->Connect();
+            continue;
          }
          
       } else if (strncasecmp(this_section, "modules", 8) == 0) {

@@ -4,16 +4,17 @@
 Rig *rigs[MAX_RIGS];
 const int max_rigs = MAX_RIGS;
 
-struct rig_driver_names rig_driver_names[] {
+struct rig_driver_name rig_driver_names[] {
   { RIG_DRIVER_NONE, 		"NONE" },
   { RIG_DRIVER_HAMLIB,		"hamlib" },
   { RIG_DRIVER_FLRIG,		"flrig" },
-  { RIG_DRIVER_SERIAL_PTT, 	"serial-ptt" }
+  { RIG_DRIVER_SERIAL_PTT, 	"serial-ptt" },
+  { RIG_DRIVER_NONE,		NULL }
 };
 
 void Rig::Connect(void) {
-   Log->Send(LOG_INFO, "radio%d: Connecting to rig...", this->id);
-   Log->Send(LOG_INFO, "radio%d: driver: %d: model %lu", this->driver, this->model);
+   Log->Send(LOG_INFO, "<radio%d>: Connecting to rig...", this->id);
+   Log->Send(LOG_INFO, "<radio%d>: driver: %d: model %lu", this->driver, this->model);
 
    if (this->driver == RIG_DRIVER_HAMLIB) {
       this->hamlib = new Rig_Hamlib(this->model);

@@ -8,7 +8,7 @@ enum rig_driver_t {
    RIG_DRIVER_SERIAL_PTT
 };
 
-struct rig_driver_names {
+struct rig_driver_name {
    enum rig_driver_t driver;
    const char *name;
 };
@@ -47,7 +47,7 @@ class Rig {
 };
 
 // from src/rig.cpp
-extern struct rig_driver_names rig_driver_names[];
+extern struct rig_driver_name rig_driver_names[];
 extern Rig *rigs[MAX_RIGS];
 extern const int max_rigs;
 

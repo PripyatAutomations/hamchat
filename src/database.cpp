@@ -1,33 +1,51 @@
 #include "hamchat.h"
 
+// A place to store pointers to all databases
+dict *Databases = NULL;
+
 Database::~Database() {
  sqlite3_close(this->db);
 }
 
-Database::Database(const char *path, const char *schema) {
+Database::Database(const char *name) {
    int rc;
    struct stat sb;
    bool need_load_schema = false;
 
+   // XXX: Get schema and db paths from config
+   char dbpath[40], schemapath[60];
+   memset(dbpath, 0, 40);
+   memset(schemapath, 0, 40);
+   snprintf(dbpath, 60, "path.db_%s", name);
+   snprintf(schemapath, 59, "path.db_%s_schema", name);
+   
+   const char *path = cfg->Get(dbpath, "NULL");
+   const char *schema = cfg->Get(schemapath, "NULL");
+
+   if (path == NULL) {
+      Log->Send(LOG_CRIT, "DB<%s> loading database failed", name);
+      abort();
+   }
+
    // is this a new database? if so, we need to load schema below
    if (stat(path, &sb) == -1) {
       if (errno == ENOENT) {
-         Log->Send(LOG_DEBUG, "database %s is new, schema_file %s will be loaded, if present", path, schema);
+         Log->Send(LOG_DEBUG, "DB<%s>: database %s is new, schema_file %s will be loaded, if present", name, path, schema);
          need_load_schema = true;
       }
    }
    
    // try to open the database
    if ((rc = sqlite3_open(path, &this->db))) {
-      Log->Send(LOG_CRIT, "DB: can't open database %s: %s", path, sqlite3_errmsg(this->db));
+      Log->Send(LOG_CRIT, "DB<%s>: can't open database %s: %s", name, path, sqlite3_errmsg(this->db));
       shutdown(200);
    } else {
-      Log->Send(LOG_INFO, "DB: opened database %s succesfully!", path);
+      Log->Send(LOG_INFO, "DB<%s>: opened database %s succesfully!", name, path);
    }
 
    if (need_load_schema) { 
       bool load_schema_res = this->LoadSchema(schema);
-      Log->Send(LOG_INFO, "Loading schema %s %s", path, (load_schema_res ? "successful" : "failed"));
+      Log->Send(LOG_INFO, "DB<%s>: Loading schema %s %s", name, path, (load_schema_res ? "successful" : "failed"));
    }
 }
 

@@ -6,7 +6,7 @@ class Database {
       sqlite3 *db;
 
    public:
-      Database(const char *path, const char *schema);
+      Database(const char *name);
       ~Database();
       bool LoadSchema(const char *path);
 };

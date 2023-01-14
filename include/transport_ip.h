@@ -29,12 +29,6 @@ class Listener {
       bool Start();
 };
 
-
-//extern llist_t *Listeners;
-
-// create configured listeners...
-extern bool create_listener(const char *uri);
-
 // Set the fd to non-blocking mode
 extern int set_nonblocking(int fd);
 
