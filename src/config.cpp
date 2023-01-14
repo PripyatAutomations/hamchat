@@ -108,15 +108,12 @@ bool Config::ParseSection(const char *section) {
 
                struct rig_driver_name *rd = &rig_driver_names[i];
 
-               Log->Send(LOG_INFO, "<radio%d> Trying %d: %d: %s", rig_id, i, rd->driver, rd->name);
-
                if (strncasecmp(val, rd->name, strlen(rd->name)) == 0) {
 //                  Log->Send(LOG_DEBUG, "<radio%d> rdn: %x rdd: %i rrid: %d rrd: %x", rig_id, rd->name, rd->driver, rig_id, rigs[rig_id]->driver);
                   rigs[rig_id]->driver = rd->driver;
                   Log->Send(LOG_INFO, "<radio%d> set driver: %s (%d)", rig_id, rd->name, rd->driver);
                   break;
-               } else
-                  Log->Send(LOG_DEBUG, "<radio%d> skipping %s", rig_id, rd->name);
+               }
             }
             continue;
          } else if (strncasecmp(key, "model", 5) == 0) {
