@@ -36,15 +36,15 @@
 #include "transport.h"
 #include "modem.h"
 #include "database.h"
-#include "heartbeat.h"
 #include "irc.h"
+#include "rig.h"
+#include "heartbeat.h"
 #include "modes.h"
 #include "module.h"
 #include "motd.h"
 #include "packet.h"
 #include "spotting.h"
 #include "statistics.h"
-#include "rig.h"
 
 // src/daemonize.cpp
 extern int daemonize(void);

@@ -418,6 +418,28 @@ int dict_enumerate(dict *d, int rank, const char **key, const char **val, time_t
 
     return rank;
 }
+int dict_enumerate_blob(dict *d, int rank, const char **key, const void **val, time_t *ts) {
+    if (!d || !key || !val || (rank < 0))
+       return -1;
+
+    while ((d->table[rank].key == NULL || d->table[rank].key == DUMMY_PTR) &&
+           (rank<d->size))
+       rank++;
+
+    if (rank >= d->size) {
+       *key = NULL;
+       *val = NULL;
+       ts = 0;
+       rank = -1;
+    } else {
+       *key = d->table[rank].key;
+       *val = d->table[rank].blob;
+       *ts = d->table[rank].ts;
+       rank++;
+    }
+
+    return rank;
+}
 
 /* Public: dump a dict to a file pointer */
 int dict_dump(dict *d, FILE *out) {

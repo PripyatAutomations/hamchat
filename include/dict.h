@@ -127,6 +127,7 @@ extern int dict_del(dict *d, const char *key);
  */
 
 extern int dict_enumerate(dict *d, int rank, const char **key, const char **val, time_t *ts);
+extern int dict_enumerate_blob(dict *d, int rank, const char **key, const void **val, time_t *ts);
 
 /*
  * @brief    Dump dict contents to an opened file pointer

@@ -11,7 +11,7 @@ struct ev_loop	*main_loop = EV_DEFAULT;
 #if	0
 int dict_dump(dict *d, FILE *out) {
     const char *key;
-    const char *val;
+    const void *val;
     int    rank = 0;
     int    errors = 0;
     time_t ts = 0;
@@ -20,7 +20,7 @@ int dict_dump(dict *d, FILE *out) {
        return errors;
 
     while (1) {
-       rank = dict_enumerate(d, rank, &key, &val, &ts);
+       rank = dict_enumerate_blob(d, rank, &key, &val, &ts);
 
        if (rank < 0)
           break;

@@ -1,5 +1,4 @@
 #include "hamchat.h"
-
 dict *Listeners = NULL;
 
 int set_nonblocking(int fd) {
@@ -25,7 +24,7 @@ void sock_read_cb(EV_P_ ev_io *w, int revents) {
    }
 
    if (cptr->cli_type != CLI_TYPE_LOCAL) {
-      Log->Send(LOG_CRIT, "What??? got socket read for non-local client on fd %d", w->fd);
+      Log->Send(LOG_CRIT, "What??? got socket read for non-local client on fd %d: %d", w->fd, cptr->cli_type);
       return;
    }
 
@@ -156,17 +155,7 @@ static void sock_pending_cb(EV_P_ ev_io *w, int revents) {
       set_nonblocking(cptr->sock->fd);
       ev_io_init(&cptr->sock->io, sock_read_cb, cptr->sock->fd, EV_READ);
       ev_io_start(EV_A_ &cptr->sock->io);
-#if	0
-      // append to client list...
-      if (Clients == NULL) {
-         Clients = llist_append(NULL, (void *)cptr);
-      } else {
-         llist_t *tp = llist_append(Clients, (void *)cptr);
-      }
-#endif
    }
-   // show the final list after processing this queue
-//   llist_dump(Clients);
 }
 
 Listener::Listener(const char *addr) {
@@ -231,7 +220,6 @@ Listener::Listener(const char *addr) {
       Log->Send(LOG_CRIT, "error binding listener %s:%d: %d (%s)", this->host, this->port, errno, strerror(errno));
       shutdown(120);
    }
-
 
    // and start non-blocking listener!
    set_nonblocking(this->sock->fd);

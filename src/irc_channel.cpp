@@ -31,7 +31,7 @@ bool Channel::DumpToDb(Database *db, const char *section) {
 
    // from dict_dump();
    const char *key;
-   const char *val;
+   const void *val;
    int    rank = 0;
    int    errors = 0;
    time_t ts = 0;
@@ -40,7 +40,7 @@ bool Channel::DumpToDb(Database *db, const char *section) {
       return false;
 
    while (true) {
-      rank = dict_enumerate(Channels, rank, &key, &val, &ts);
+      rank = dict_enumerate_blob(Channels, rank, &key, &val, &ts);
 
       if (rank < 0)
          break;

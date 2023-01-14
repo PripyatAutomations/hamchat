@@ -24,19 +24,19 @@ Client::Client(irc_cli_type_t type, int fd) {
    // are we a socket client?
    if (type == CLI_TYPE_LOCAL) {
       this->sock = new Socket(fd);
-      this->sock->fd = fd;
       snprintf(this->hostname, HOST_NAME_MAX, "irc.local");
 
       // set the connection state...
       this->conn_state = IRC_STATE_NONE;
-   }
 
-   // Add the client to the _by_fd lookup table
-   if (fd) {
-      char buf[12];
-      memset(buf, 0, 12);
-      snprintf(buf, 11, "%d", fd);
-      dict_add_blob(Clients_by_fd, buf, (void *)this);
+      // Add the client to the _by_fd lookup table
+      if (fd) {
+         this->sock->fd = fd;
+         char buf[12];
+         memset(buf, 0, 12);
+         snprintf(buf, 11, "%d", fd);
+         dict_add_blob(Clients_by_fd, buf, (void *)this);
+      }
    }
 
    // set connected time to now
@@ -49,6 +49,7 @@ Client::Client(irc_cli_type_t type, int fd) {
       // XXX: Send wallops to all local users?
    }
 
+   Log->Send(LOG_NOTICE, "New Client: type=%d", this->cli_type);
    // Send some progress to client
    this->Send("NOTICE AUTH :*** Processing your connection, please wait...");
    this->Send("NOTICE AUTH :*** If not already configured, please send your password using /PASS to continue");

@@ -1,0 +1,5 @@
+Heartbeat
+---------
+	One to many
+		HB CALLSIGN GRIDSQUARE@POWER time_t
+		HB N0CALL AA00aa@5.0 1673719225
