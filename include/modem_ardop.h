@@ -54,13 +54,21 @@ enum ardop_modem_state {
 };
 typedef enum ardop_modem_state ardop_modem_state_t;
 
+
+struct ardop_proto_pkt {
+   u_int16_t	pkg_header;
+   u_int8_t	pkg_chan;
+   u_int8_t	pkg_opcode;
+   char		*pkg_payload;
+};
+
 class Modem_ARDOP {
    private:
       char host[HOST_NAME_MAX];
       int  port_cmd;
       int  port_data;
-      int  fd_cmd;
-      int  fd_data;
+      Socket *sock_cmd;
+      Socket *sock_data;
       ardop_modem_state_t ardop_state;
       // State that we should try to keep in sync with the modem
       ardop_mode_t tnc_mode;
@@ -96,4 +104,6 @@ class Modem_ARDOP {
       const char *GetModulationModeName(void);
 };
 extern struct ardop_mode_names ardop_mode_names[];
+extern bool start_ardop_modem(void);
+
 #endif	// !defined(_modem_ardop_h)

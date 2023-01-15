@@ -24,6 +24,7 @@ Client::Client(irc_cli_type_t type, int fd) {
    // are we a socket client?
    if (type == CLI_TYPE_LOCAL) {
       this->sock = new Socket(fd);
+      Log->Send(LOG_DEBUG, "This is a local IRC client");
       snprintf(this->hostname, HOST_NAME_MAX, "irc.local");
 
       // set the connection state...
@@ -37,6 +38,8 @@ Client::Client(irc_cli_type_t type, int fd) {
          snprintf(buf, 11, "%d", fd);
          dict_add_blob(Clients_by_fd, buf, (void *)this);
       }
+   } else {
+      Log->Send(LOG_CRIT, "we do not yet support non-local clients (cli_type: %d, fd:% d)", type, fd);
    }
 
    // set connected time to now
@@ -49,7 +52,7 @@ Client::Client(irc_cli_type_t type, int fd) {
       // XXX: Send wallops to all local users?
    }
 
-   Log->Send(LOG_NOTICE, "New Client: type=%d", this->cli_type);
+   Log->Send(LOG_NOTICE, "New Client: %x type=%d", this, this->cli_type);
    // Send some progress to client
    this->Send("NOTICE AUTH :*** Processing your connection, please wait...");
    this->Send("NOTICE AUTH :*** If not already configured, please send your password using /PASS to continue");
@@ -134,6 +137,7 @@ Client *find_client(const char *callsign) {
       Log->Send(LOG_DEBUG, "<%s> find_client returned no results", callsign);
       return NULL;
    }
+   Log->Send(LOG_DEBUG, "%s: client matches %x", __FUNCTION__, cp);
    return cp;
 }
 
@@ -148,6 +152,8 @@ Client *find_client(int fd) {
       Log->Send(LOG_DEBUG, "<%d> find_client returned no results", fd);
       return NULL;
    }
+
+   Log->Send(LOG_DEBUG, "%s: client matches %x", __FUNCTION__, cp);
 
    return cp;
 }
@@ -190,7 +196,8 @@ bool Client::send_connect_numerics(void) {
    this->Send(":%s 266 %s %lu %lu :Current global users %lu, max %lu", cfg->Get("core.servername", "hamchat.local"), this->callsign, stats.curr_clients, stats.max_clients, stats.curr_clients, stats.max_clients);
    this->Send(":%s 250 %s :Highest connection count: %lu (%lu clients) (%lu received)", cfg->Get("core.servername", "hamchat.local"), this->callsign, stats.max_clients, stats.max_clients, stats.max_clients, stats.max_clients);
 
-   // XXX: MOTD
+   // XXX: Send MOTD
+
    return true;
 }
 

@@ -11,12 +11,40 @@
 
 struct bot_cmds {
    char name[16];
-   bool (*bot_cmd)(Client *cptr, const char *buf),
+   bool (*bot_cmd)(Client *cptr, const char *buf);
    const char *help;
 };
 typedef struct bot_cmds bot_cmds_t;
 
+// This is ugly since we cannot modify the input strings....
 bool bot_freq(Client *cptr, const char *buf) {
+    Rig *rig = NULL;
+    if (buf == NULL) {
+       // setup for readback frequency of rig 0
+       rig = rigs[0];
+    } else {
+       const char *arg1 = NULL, *arg2 = NULL;
+       arg1 = buf;
+       arg2 = strchr(arg2, ' ');
+       if (arg1 == NULL) {
+          // well that's not teh answer...
+       }
+       size_t arg1_len = arg2 - arg1;
+
+       char tmpbuf[32];
+       memset(tmpbuf, 0, 32);
+
+       if (arg1_len > 0 && arg1_len < 32) {
+          memcpy(tmpbuf, buf, arg1_len);
+       }
+       // it's actually next character
+       arg2++;
+       
+    }
+    return false;
+}
+
+bool bot_mode(Client *cptr, const char *buf) {
     return false;
 }
 

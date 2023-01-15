@@ -41,6 +41,7 @@ path.logfile=file://hamchat.log
 path.motd=etc/hamchat.motd
 path.pidfile=hamchat.pid
 path.statsfile=etc/hamchat.stats
+path.ardop_bin=./ext/ardop1/ardopc
 
 ;;;;;;;;;;;;;;
 ; statistics ;
@@ -70,8 +71,8 @@ path.channel_dump=etc/channels/dump.csv
 chan.dump.keep_old=true
 
 [listen]
-*:6660
-127.0.0.1:6667
+tcp://*:6660
+tcp://127.0.0.1:6667
 
 [radio0]
 driver=hamlib

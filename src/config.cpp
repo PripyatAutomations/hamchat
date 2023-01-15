@@ -154,6 +154,9 @@ Config::Config(const char *file) {
    this->ParseSection("general");
 }
 
+///////
+// Wrappers for things on the key/value store
+////////////////////////////////////////////////
 int Config::Add(const char *key, const char *val) {
    return dict_add(this->data, key, val);
 }

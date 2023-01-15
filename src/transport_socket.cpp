@@ -22,10 +22,12 @@ void sock_read_cb(EV_P_ ev_io *w, int revents) {
       ev_io_stop(EV_A_ w);
       close(w->fd);
       return;
-   }
+   } else
+      Log->Send(LOG_DEBUG, "find_client returned %x for fd %d", cptr, w->fd);
 
    if (cptr->cli_type != CLI_TYPE_LOCAL) {
-      Log->Send(LOG_CRIT, "What??? got socket read for non-local client on fd %d: %d", w->fd, cptr->cli_type);
+      Log->Send(LOG_CRIT, "What??? got socket read for non-local client on fd %d: %d - expected %d", w->fd, cptr->cli_type, CLI_TYPE_LOCAL);
+      abort();
       return;
    }
 
@@ -122,7 +124,7 @@ Socket::Socket(const char *uri) {
    const char *start = uri, *sep;
    enum { UDP = 0, TCP, FIFO } type;
    struct hostent *hostnm;
-   struct sockaddr_in server;
+   struct sockaddr_in sa;
 
    // save the whole URI to the object
    size_t cpysz = strlen(uri);
@@ -160,12 +162,12 @@ Socket::Socket(const char *uri) {
 
          // save hostname
          memset(this->host, 0, HOST_NAME_MAX);
-         size_t cpylen = sep - uri;
+         size_t cpylen = sep - start;
          if (cpylen > 0)
-            memcpy(this->host, uri, cpylen);
+            memcpy(this->host, start, cpylen);
 
          if (port == 0) {
-            Log->Send(LOG_CRIT, "parsing listener %s failed: port '%s' invalid (0)", this->host, port);
+            Log->Send(LOG_CRIT, "parsing connect uri %s failed: port '%s' invalid (0)", this->host, port);
             shutdown(101);
          }
          this->port = port;
@@ -176,15 +178,14 @@ Socket::Socket(const char *uri) {
       if (hostnm == NULL) {
          Log->Send(LOG_CRIT, "couldnt resolve hostname %s", this->host);
       }
+
+      // fill sockaddr bits
+      sa.sin_family = AF_INET;
+      sa.sin_port = htons(this->port);
+      sa.sin_addr.s_addr = *((unsigned long *)hostnm->h_addr);
    } else {
      Log->Send(LOG_ERR, "* Invalid socket type selected (%d): %s", type, uri);
      delete this;
-   }
-
-   if (type == TCP) {
-      Log->Send(LOG_INFO, "* Connecting to tcp://%s:%d", host, port);
-   } else if (type == UDP) {
-      Log->Send(LOG_INFO, "* Connecting to udp://%s:%d", host, port);
    }
 
    // Create the socket connection
@@ -192,6 +193,18 @@ Socket::Socket(const char *uri) {
       this->fd = socket(PF_INET, SOCK_STREAM, 0);
    else
       this->fd = socket(PF_INET, SOCK_DGRAM, 0); 
+
+   // deal with error
+   if (this->fd == -1) {
+      Log->Send(LOG_CRIT, "Couldn't create socket to connect to %s: %s (%d)", uri, strerror(errno), errno);
+      delete this;
+   }
+
+   if (connect(this->fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
+      Log->Send(LOG_CRIT, "Couldn't connect to %s: %s (%d)", uri, strerror(errno), errno);
+      delete this;
+   }
+   Log->Send(LOG_DEBUG, "Connection to %s successfull!", uri);
 }
 
 Socket::~Socket() {
@@ -232,44 +245,85 @@ static void sock_pending_cb(EV_P_ ev_io *w, int revents) {
    }
 }
 
-Listener::Listener(const char *addr) {
-   const char *sep, *pp;
+Listener::Listener(const char *uri) {
+   int fd;
+   const char *start = uri, *sep;
+   enum { UDP = 0, TCP, FIFO } type;
+   struct hostent *hostnm;
+   struct sockaddr_in sa;
 
    if (Listeners == NULL) {
       Listeners = dict_new();
    }
 
-   if (addr == NULL) {
-      this->port = 6660;
-   }
+   // save the whole URI to the object
+   size_t cpysz = strlen(uri);
+   if (cpysz > sizeof(this->uri))
+      cpysz = sizeof(this->uri);
+   memcpy(this->uri, uri, cpysz);
 
-   sep = strchr(addr, ':');
+   // parse out protocol
+   if (strncasecmp(uri, "tcp://", 6) == 0) {
+     type = TCP;
+     start = uri + 6;
+   } else if (strncasecmp(uri, "udp://", 6) == 0) {
+     type = UDP;
+     start = uri + 6;
+   } else if (strncasecmp(uri, "fifo://", 7) == 0) {
+     type = FIFO;
+     start = uri + 7;
+   } 
 
-   if (sep == NULL) {
-      Log->Send(LOG_CRIT, "invalid listener configuration: %s", addr);
-      shutdown(100);
-   }
+   // to do the needful for IP transports
+   if (type == TCP || type == UDP) {
+      // extract the port
+      sep = strchr(start, ':');
 
-   // seperator is valid!
-   if (sep > addr) {
-      memset(this->host, 0, HOST_NAME_MAX);
-      pp = sep + 1;
-      int ptmp = atoi(pp);
-
-      if (ptmp == 0) {
-         Log->Send(LOG_CRIT, "parsing listener %s failed: port '%s' invalid (0)", addr, port);
-         shutdown(101);
+      if (sep == NULL) {
+         Log->Send(LOG_CRIT, "invalid socket address: %s", uri);
+         delete this;
       }
-      this->port = ptmp;
-      size_t cpylen = sep - addr;
 
-      if (cpylen > 0)
-         memcpy(this->host, addr, cpylen);
+      // seperator is valid!
+      if (sep > uri) {
+         // extract and save port
+         int port;
+         port = atoi(sep+1);
+
+         // save hostname
+         memset(this->host, 0, HOST_NAME_MAX);
+         size_t cpylen = sep - start;
+         if (cpylen > 0)
+            memcpy(this->host, start, cpylen);
+
+         if (port == 0) {
+            Log->Send(LOG_CRIT, "parsing listener %s failed: port '%s' invalid (0)", this->host, port);
+            shutdown(101);
+         }
+         this->port = port;
+      }
+
+      // allow wildcard listeners
+      if (this->host[0] == '*') {
+         sa.sin_addr.s_addr = INADDR_ANY;
+      } else {
+         hostnm = gethostbyname(this->host);
+         if (hostnm == NULL) {
+            Log->Send(LOG_CRIT, "couldnt resolve hostname %s", this->host);
+            shutdown(108);
+         }
+         sa.sin_addr.s_addr = *((unsigned long *)hostnm->h_addr);
+      }
+
+      // fill sockaddr bits
+      sa.sin_family = AF_INET;
+      sa.sin_port = htons(this->port);
    }
+   if (type == TCP)
+      this->sock = new Socket(socket(PF_INET, SOCK_STREAM, 0));
+   else if (type == UDP)
+      this->sock = new Socket(socket(PF_INET, SOCK_DGRAM, 0));
 
-   this->sock = new Socket(socket(PF_INET, SOCK_STREAM, 0));
-
-   Log->Send(LOG_INFO, "Starting listener on %s:%d", this->host, this->port);
    this->running = true;
 
    // try to set SO_REUSEADDR for quicker restarts
@@ -278,17 +332,6 @@ Listener::Listener(const char *addr) {
    if (setsockopt(this->sock->fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int)) < 0)
       Log->Send(LOG_CRIT, "setsockopt(SO_REUSEADDR) failed");
 
-   // Convert the host and port into a BSD style sockaddr_in
-   struct sockaddr_in sa;
-   sa.sin_family = AF_INET;
-   sa.sin_port = htons(this->port);
-
-   // allow wildcard listeners
-   if (this->host[0] == '*') {
-      sa.sin_addr.s_addr = INADDR_ANY;
-   } else {
-      inet_aton(this->host, &sa.sin_addr);
-   }
 
    if (bind(this->sock->fd, (struct sockaddr *)&sa, sizeof(sa)) != 0) {
       Log->Send(LOG_CRIT, "error binding listener %s:%d: %d (%s)", this->host, this->port, errno, strerror(errno));
@@ -308,4 +351,5 @@ Listener::Listener(const char *addr) {
    // let libev handle events on the socket   
    ev_io_init(&this->sock->io, sock_pending_cb, this->sock->fd, EV_READ);
    ev_io_start(main_loop, &this->sock->io);
+   Log->Send(LOG_INFO, "Started listener on %s succesfully", this->uri);
 }

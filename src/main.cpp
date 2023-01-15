@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
 
    // Main db
    main_db = new Database("main");
-   init_modem_thread();
+//   init_modem_thread();
 
    // this loop will service clients every time it's called
    ev_timer_init(&service_irc_timer, service_irc_cb, 0.1, 0.1);

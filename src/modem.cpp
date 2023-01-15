@@ -56,6 +56,9 @@ bool init_modem_thread(void) {
    }
 
    Log->Send(LOG_INFO, "Succesfully started modem interface thread");
+   Log->Send(LOG_INFO, "Spawning ardop modem...");
+   start_ardop_modem();
+
    return true;
 }
 

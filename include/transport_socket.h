@@ -23,6 +23,7 @@ class Listener {
    private:
    public:
       char host[HOST_NAME_MAX];
+      char uri[HOST_NAME_MAX+16];
       int port;
       bool	running;	// is it started?
       Socket *sock;

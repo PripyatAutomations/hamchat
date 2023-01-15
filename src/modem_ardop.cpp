@@ -1,4 +1,5 @@
 #include "hamchat.h"
+#include <sys/wait.h>
 
 //
 // Transport via ardop soft modems
@@ -55,14 +56,15 @@ Modem_ARDOP::~Modem_ARDOP() {
 
 bool Modem_ARDOP::Connect(void) {
 //   fd_cmd = conn
-#if	0
-   this->port_cmd = new Socket("localhost:8515");
-   this->port_data = new Socket("localhost:8516");
-   if (this->port_cmd == NULL || this->port_data) {
-      Log->Crit("Unable to open connection to ardop modem (cmd: %s, data: %s)", (this->port_cmd ? "true" : "false"), (this->port_data ? "true" : "false"));
+   // XXX: These need to be read from config
+   this->sock_cmd = new Socket("tcp://localhost:8515");
+   this->sock_data = new Socket("tcp://localhost:8516");
+   if (this->sock_cmd == NULL || this->sock_data == NULL) {
+      Log->Send(LOG_CRIT, "Unable to open connection to ardop modem (cmd: %s, data: %s)", (this->port_cmd ? "true" : "false"), (this->port_data ? "true" : "false"));
       return false;
    }
-#endif
+
+
    return false;
 }
 
@@ -84,4 +86,38 @@ ardop_mode_t Modem_ARDOP::GetModulationMode(void) {
 
 const char *Modem_ARDOP::GetModulationModeName(void) {
    return ardop_mode_names[this->tnc_mode].name;
+}
+
+bool start_ardop_modem(void) {
+   pid_t childpid;
+   int status;
+   char *args[2] = { "ardopc", NULL };
+
+   childpid = fork();
+
+   if (childpid >= 0) {
+      if (childpid == 0) {
+         const char *path = cfg->Get("path.ardop_bin", NULL);
+
+         if (path == NULL) {
+            Log->Send(LOG_CRIT, "Unable to spawn ardop modem (path.ardop_bin not confirmed)");
+            return false;
+         }
+
+         if (execve(path, args, NULL) < 0) {
+            Log->Send(LOG_CRIT, "unable to exec ardop modem at %s", path);
+            return false;
+         }
+      } else {
+//         wait(&status);
+         sleep(1);
+         Modem_ARDOP *ardop = new Modem_ARDOP();
+         ardop->Connect();
+      }
+   } else {
+      Log->Send(LOG_CRIT, "fork failed");
+   }
+
+
+   return true;
 }

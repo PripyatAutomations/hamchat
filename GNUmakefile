@@ -7,11 +7,13 @@ LDFLAGS := -lsqlite3 -lev -lhamlib
 
 bins := hamchat
 #subdirs += ext/ft8_lib
+subdirs += ext/ardop1
 clean_files = hamchat.log
 distclean_files = hamchat.pid etc/hamchat.db etc/users/*.db etc/channels/*.db
 #hamchat_objs += audio.o
 #hamchat_objs += audio_alsa.o
 #hamchat_objs += audio_pulse.o
+hamchat_objs += bot.o
 #hamchat_objs += cmdline.o
 hamchat_objs += config.o
 hamchat_objs += daemon.o
@@ -94,6 +96,8 @@ headers := $(wildcard include/*.h)
 world: subdirs-all ${bins}
 
 #ARDOP_BIN := ext/ARDOPOFDM/ardopofdm
+ARDOP_BIN := ext/ardop1/ardopc
+
 hamchat: ${ARDOP_BIN} ${hamchat_real_objs} GNUmakefile ${headers} etc/hamchat.db
 	@echo "[link] $@"
 	@${CXX} -o $@ ${hamchat_real_objs} ${LDFLAGS}
@@ -135,8 +139,11 @@ stop:
 	kill -TERM $(shell cat ardop.pid) || true
 	${RM} hamchat.pid ardop.pid
 
-ext/ARDOPOFDM/ardopofdm:
-	${MAKE} -C ext/ARDOPOFDM
+#ext/ARDOPOFDM/ardopofdm:
+#	${MAKE} -C ext/ARDOPOFDM
+
+ext/ardop1/ardopc:
+	${MAKE} -C ext/ardop1
 
 ##################
 # subdirectories #
