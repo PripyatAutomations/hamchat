@@ -54,13 +54,30 @@ enum ardop_modem_state {
 };
 typedef enum ardop_modem_state ardop_modem_state_t;
 
+#define	ARDOP_HEADER	0xaaaa
 
 struct ardop_proto_pkt {
-   u_int16_t	pkg_header;
-   u_int8_t	pkg_chan;
-   u_int8_t	pkg_opcode;
-   char		*pkg_payload;
+   u_int16_t	pkt_header;
+   u_int8_t	pkt_chan;
+   u_int8_t	pkt_opcode;
+   // up to 256 bytes - NULL terminated?
+   char	        pkt_payload[256];
+   // XXX: Tcp doesn't need CRC?
+   u_int16_t    pkt_crc;
 };
+
+// ARDOP opcodes
+#define	ARDOP_OP_DATA		0	// to TNC
+#define	ARDOP_OP_CMD		1	// to TNC
+#define	ARDOP_OP_SUCCESS	0	// from TNC (no data follows)
+#define	ARDOP_OP_SUCCESS_DATA	1	// from TNC (NULL term data follows)
+#define	ARDOP_OP_DATA_REPLY	7	// <length byte (len-1)>data follows
+
+// ARDOP message channels
+#define	ARDOP_CHAN_COMMAND	0x20	// 32
+#define	ARDOP_CHAN_DATA		0x21	// 33
+#define	ARDOP_CHAN_DEBUG	0x22	// 34
+#define	ARDOP_CHAN_ALL		0xff	// poll all
 
 class Modem_ARDOP {
    private:
@@ -102,6 +119,11 @@ class Modem_ARDOP {
       // Get Modulation Type
       ardop_mode_t GetModulationMode(void);
       const char *GetModulationModeName(void);
+      ////////////////////////////////////////////////
+      // interfaces to the software modem (ardop1c) //
+      ////////////////////////////////////////////////
+      // Poll the TNC for status, etc
+      bool TNC_Poll(int channel);
 };
 extern struct ardop_mode_names ardop_mode_names[];
 extern bool start_ardop_modem(void);

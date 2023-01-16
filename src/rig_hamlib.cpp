@@ -26,6 +26,7 @@ Rig_Hamlib::Rig_Hamlib(rig_model_t model) {
       Log->Send(LOG_CRIT, "hamlib_open: error %d (%s)", rc, rigerror(rc));
       shutdown(2);
    }
+   Log->Send(LOG_INFO, "rig successfully opened via Rig_Hamlib");
 }
 
 Rig_Hamlib::~Rig_Hamlib() {

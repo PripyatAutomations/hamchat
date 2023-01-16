@@ -48,10 +48,65 @@ struct ardop_mode_names ardop_mode_names[] = {
   {  ARDOP_MODE_FEC_8PSK_2000_167, "ardop/fec:8psk_2000_167" }
 };
 
+#if	0
+/*
+ * ARDOP Commands
+ */
+struct ardop_cmd_cb {
+   char name[16];
+   void (*cb)();
+};
+
+// These are the things we will hear from the TNC
+struct ardop_cmd_cb ardop_resp_callbacks[] = {
+  { "ARQBW",			ardop_arqbw_cb },
+  { "BUFFER",			ardop_buffer_cb },
+  { "BUSY",			ardop_busy_cb },
+  { "BUSYDET",			ardop_busydet_cb },
+  { "CANCELPENDING",		ardop_cancelpending_cb },
+  { "CONNECTED",		ardop_connected_cb },
+  { "DISCONNECTED",		ardop_disconected_cb },
+  { "ENABLEPINGACK",		ardop_enablepingck_cb },
+  { "FECID",			ardop_fecid_cb },
+  { "FECMODE",			ardop_fecmode_cb },
+  { "FECREPEATS",		ardop_fecrepeats_cb },
+  { "GRIDSQUARE",		ardop_gridsquare_cb },
+  { "LEADER",			ardop_leader_cb },
+  { "LISTEN",			ardop_listen_cb },
+  { "MYCALL",			ardop_mycall_cb },
+  { "NEWSTATE", 		ardop_newstate_cb },
+  { "NOW",			ardop_now_cb },
+  { "PENDING",			ardop_pending_cb },
+  { "PING",			ardop_ping_cb },
+  { "PINGACK",			ardop_pingack_cb },
+  { "PINGREPLY",		ardop_pingreply_cb },
+  { "PTT",			ardop_ptt_cb },
+  { "REJECTEDBUSY",		ardop_rejectedbusy_cb },
+  { "REJECTEDBW",		ardop_rejectedbw_cb },
+  { "SQUELCH",			ardop_squelch_cb },
+  { "STATE",			ardop_state_cb },
+  { "TARGET",			ardop_target_cb },
+  { "TRAILER",			ardop_trailer_cb },
+  { "VERSION",			ardio_version_cb },
+  { NULL,			NULL }
+};
+
+#endif
+
 Modem_ARDOP::Modem_ARDOP() {
 }
 
 Modem_ARDOP::~Modem_ARDOP() {
+}
+
+// this belongs only in here
+static u_int16_t ardop_pkt_crc(ardop_proto_pkt *in) {
+    u_int16_t calc_crc = 0;
+
+    // figure it out...
+
+    // return it
+    return calc_crc;
 }
 
 bool Modem_ARDOP::Connect(void) {
@@ -63,7 +118,6 @@ bool Modem_ARDOP::Connect(void) {
       Log->Send(LOG_CRIT, "Unable to open connection to ardop modem (cmd: %s, data: %s)", (this->port_cmd ? "true" : "false"), (this->port_data ? "true" : "false"));
       return false;
    }
-
 
    return false;
 }
@@ -88,36 +142,50 @@ const char *Modem_ARDOP::GetModulationModeName(void) {
    return ardop_mode_names[this->tnc_mode].name;
 }
 
+bool Modem_ARDOP::TNC_Poll(int channel) {
+   ardop_proto_pkt pkt;
+   memset(&pkt, 0, sizeof(ardop_proto_pkt));
+
+   pkt.pkt_header = ARDOP_HEADER;	// 0xAAAA
+   pkt.pkt_chan = channel;
+   pkt.pkt_opcode = ARDOP_OP_CMD;
+   pkt.pkt_payload[0] = 0x00;
+   pkt.pkt_payload[1] = 0x47;
+   pkt.pkt_crc = ardop_pkt_crc(&pkt);
+
+   // send it to the modem
+   return this->sock_cmd->Send((void *)&pkt, sizeof(pkt));
+}
+
 bool start_ardop_modem(void) {
    pid_t childpid;
    int status;
+#if	0
    char *args[2] = { "ardopc", NULL };
 
-   childpid = fork();
-
-   if (childpid >= 0) {
-      if (childpid == 0) {
-         const char *path = cfg->Get("path.ardop_bin", NULL);
-
-         if (path == NULL) {
-            Log->Send(LOG_CRIT, "Unable to spawn ardop modem (path.ardop_bin not confirmed)");
-            return false;
-         }
-
-         if (execve(path, args, NULL) < 0) {
-            Log->Send(LOG_CRIT, "unable to exec ardop modem at %s", path);
-            return false;
-         }
-      } else {
-//         wait(&status);
-         sleep(1);
-         Modem_ARDOP *ardop = new Modem_ARDOP();
-         ardop->Connect();
-      }
-   } else {
-      Log->Send(LOG_CRIT, "fork failed");
+   if ((childpid = fork()) < 0) {
+      return false;
+   } else if (childpid != 0) {
+      exit(0);
    }
 
+   const char *path = cfg->Get("path.ardop_bin", NULL);
 
+   if (path == NULL) {
+      Log->Send(LOG_CRIT, "Unable to spawn ardop modem (path.ardop_bin not confirmed)");
+      return false;
+   }
+
+   signal(SIGCHLD, SIG_IGN);
+   // start new session
+   pid_t new_sid = setsid(); 
+
+   if (execve(path, args, NULL) < 0) {
+      Log->Send(LOG_CRIT, "unable to exec ardop modem at %s", path);
+      return false;
+   }
+
+   Log->Send(LOG_INFO, "ardop modem as pid %d", childpid);
+#endif
    return true;
 }

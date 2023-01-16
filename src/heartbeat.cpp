@@ -5,9 +5,11 @@ Heartbeat *heartbeat = NULL;
 // Support for heartbeat networking
 //
 static void heartbeat_callback(EV_P_ ev_timer *w, int revents) {
+   Rig *rig = rigs[0];
+
    if (heartbeat != NULL) {
       // XXX: figure out which rig the heartbeats need to go out
-//      heartbeat->Send(Rig);
+      heartbeat->Send(rig);
    }
 } 
 
@@ -32,7 +34,8 @@ bool Heartbeat::SerializePacket(heartbeat_pkt_t *pkt, char *buf, size_t bufsz) {
    
    memset(buf, 0, bufsz);
 
-   snprintf(buf, bufsz, "HB %s %s@%.5f %lu\n", pkt->tx_call, pkt->tx_grid, pkt->tx_power, pkt->tx_time);
+   snprintf(buf, bufsz, "HB %s %s@%.03f %lu\n", pkt->tx_call, pkt->tx_grid, pkt->tx_power, pkt->tx_time);
+//   Log->Send(LOG_DEBUG, "HeartBeatPacketSerialized: %s", buf);
    return true;
 }
 
@@ -56,12 +59,10 @@ bool Heartbeat::Send(Rig *rig) {
    hb = this->CreatePacket(NULL, rig);
 
    if (this->SerializePacket(hb, buf, sizeof(buf)) == true) {
-      //
+      Log->Send(LOG_DEBUG, "Sending heartbeat: %s...", buf);
    } else {
-      Log->Send(LOG_CRIT, "Heartbeat::SerializePacket() returned false");
+      Log->Send(LOG_CRIT, "Heartbeat::SerializePacket() returned false, not sending...");
    }
-
-   Log->Send(LOG_DEBUG, "Sending heartbeat: %s...", this->buf);
 
    return true;
 }
@@ -80,20 +81,35 @@ heartbeat_pkt_t *Heartbeat::CreatePacket(Client *cptr, Rig *rig) {
    if (cptr != NULL) {     // If client set, use it's callsign and our location
       call = cptr->GetCallsign();
    } else {
-     call = cfg->Get("station.callsign", NULL);
+      call = cfg->Get("station.callsign", NULL);
 
-     if (call == NULL) {
-        Log->Send(LOG_CRIT, "Edit your configuration noob!");
-        abort();
-     }
+      if (call == NULL) {
+         Log->Send(LOG_CRIT, "Edit your configuration noob!");
+         return NULL;
+      }
    }
    memcpy(hb->tx_call, call, strlen(call));
+   const char *sta_grid = cfg->Get("station.gridsquare", NULL);
+
+   if (sta_grid == NULL) {
+      Log->Send(LOG_CRIT, "No station grid configured; edit station.gridsquare and restart!");
+      abort();
+   }
+
+   // store the grid location of the station
+   size_t grid_sz = strlen(sta_grid);
+   if (grid_sz > GRID_LEN)
+      grid_sz = GRID_LEN;
+
+   memcpy(hb->tx_grid, sta_grid, grid_sz);
+   
+   // get the TX power station it
    int tmp = -1;
-   hb->tx_power = rig->GetTXPower(&tmp);
+//   hb->tx_power = rig->GetTXPower(&tmp);
+   hb->tx_power = cfg->GetDouble("station.default_txpower", 1.0);
 
    // send our time so others can synchronize
    hb->tx_time = now;
 
-   // send 
-   return NULL;
+   return hb;
 }

@@ -1,6 +1,9 @@
 #!/bin/bash
 
-./ext/ARDOPOFDM/ardopofdm &
+# remove stale logs
+rm -f log/ARDOP*.log
+./ext/ardop1/ardopc 2>&1 > /dev/null &
 ARDOP_PID=$$
 
-echo "${ARDOP_PID}" > ardop.pid
+echo "${ARDOP_PID}" > log/ardop.pid
+sleep 2

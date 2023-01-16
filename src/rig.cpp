@@ -13,8 +13,7 @@ struct rig_driver_name rig_driver_names[] {
 };
 
 void Rig::Connect(void) {
-   Log->Send(LOG_INFO, "<radio%d>: Connecting to rig...", this->id);
-   Log->Send(LOG_INFO, "<radio%d>: driver: %d: model %lu", this->id, this->driver, this->model);
+   Log->Send(LOG_INFO, "<radio%d> Connecting to rig...", this->id);
 
    if (this->driver == RIG_DRIVER_HAMLIB) {
       this->hamlib = new Rig_Hamlib(this->model);

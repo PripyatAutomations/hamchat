@@ -5,7 +5,7 @@ CFLAGS := -g -Wall -ansi -pedantic -I./include -std=gnu++20
 CFLAGS += -Wno-unused-function -Wno-unused-variable -Wno-format-truncation
 LDFLAGS := -lsqlite3 -lev -lhamlib
 
-bins := hamchat
+bins := bin/hamchat
 #subdirs += ext/ft8_lib
 subdirs += ext/ardop1
 clean_files = hamchat.log
@@ -63,6 +63,7 @@ hamchat_objs += m_who.o
 hamchat_objs += m_whois.o
 hamchat_objs += m_whowas.o
 hamchat_objs += main.o
+hamchat_objs += maths.o
 hamchat_objs += modem.o
 hamchat_objs += modem_ardop.o
 #hamchat_objs += modem_bell103.o
@@ -82,6 +83,7 @@ hamchat_objs += spotting_db.o
 #hamchat_objs += spotting_pskreporter.o
 #hamchat_objs += spotting_rbn.o
 hamchat_objs += statistics.o
+hamchat_objs += strings.o
 hamchat_objs += transport.o
 hamchat_objs += transport_socket.o
 #hamchat_objs += transport_kiss.o
@@ -98,7 +100,7 @@ world: subdirs-all ${bins}
 #ARDOP_BIN := ext/ARDOPOFDM/ardopofdm
 ARDOP_BIN := ext/ardop1/ardopc
 
-hamchat: ${ARDOP_BIN} ${hamchat_real_objs} GNUmakefile ${headers} etc/hamchat.db
+bin/hamchat: ${ARDOP_BIN} ${hamchat_real_objs} GNUmakefile ${headers} etc/hamchat.db
 	@echo "[link] $@"
 	@${CXX} -o $@ ${hamchat_real_objs} ${LDFLAGS}
 
@@ -125,11 +127,12 @@ etc/hamchat.db: etc/hamchat.sql
 	sqlite3 etc/hamchat.db < etc/hamchat.sql
 
 start:
-	./launch-ardop
-	./hamchat
+	./scripts/launch-ardop
+	./bin/hamchat
 
-gdb: hamchat stop
-	gdb ./hamchat -ex run
+gdb: bin/hamchat stop
+	./scripts/launch-ardop
+	gdb ./bin/hamchat -ex run
 
 stop:
 	@if [  -f hamchat.pid ]; then \

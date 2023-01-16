@@ -118,7 +118,6 @@ Socket::Socket(int fd) {
    }
 };
 
-
 Socket::Socket(const char *uri) {
    int fd;
    const char *start = uri, *sep;
@@ -203,8 +202,8 @@ Socket::Socket(const char *uri) {
    if (connect(this->fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
       Log->Send(LOG_CRIT, "Couldn't connect to %s: %s (%d)", uri, strerror(errno), errno);
       delete this;
-   }
-   Log->Send(LOG_DEBUG, "Connection to %s successfull!", uri);
+   } else
+      Log->Send(LOG_DEBUG, "Connection to %s successfull!", uri);
 }
 
 Socket::~Socket() {
@@ -213,6 +212,27 @@ Socket::~Socket() {
       this->fd = -1;
    }
 }
+
+// Send binary data
+bool Socket::Send(void *data, size_t data_sz) {
+   return false;
+}
+
+// 
+bool Socket::vSend(const char *msg, va_list *ap) {
+   // chikin!
+   return false;
+}
+
+bool Socket::Send(const char *msg, ...) {
+   va_list ap;
+   va_start(ap, msg);
+
+   // pass it to the full function
+   this->vSend(msg, &ap);
+   return false;
+}
+
 
 //////////////////////////////////////////
 // A simple socket listener using libev //

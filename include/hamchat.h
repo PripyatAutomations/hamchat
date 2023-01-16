@@ -2,6 +2,7 @@
 #define	_hamchat_h
 #define	MAX_CMDS	32	// max commands per module
 #include <list>
+#include <cstring>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -27,9 +28,11 @@
 #include <time.h>
 #include <ev.h>
 // These need to be roughly in this order ;)
+#include "mystring.h"
 #include "file.h"
 #include "dict.h"
 #include "config.h"
+#include "maths.h"
 #include "logger.h"
 #include "list.h"
 // we maybe have slight chicken ate the egg problem here...

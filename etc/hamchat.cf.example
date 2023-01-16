@@ -37,7 +37,7 @@ heartbeat.interval=600
 ;;;;;;;;;
 path.db_main=etc/hamchat.db
 path.db_main_schema=etc/hamchat.sql
-path.logfile=file://hamchat.log
+path.logfile=file://log/hamchat.log
 path.motd=etc/hamchat.motd
 path.pidfile=hamchat.pid
 path.statsfile=etc/hamchat.stats

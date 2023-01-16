@@ -6,11 +6,8 @@ etc/users/*.db
 etc/hamchat.stats
 
 # built binaries
-hamchat
+bin/hamchat
 ext/ardop1/ardopc
-
-# Run time products
-hamchat.pid
 
 # built modules and intermediate files
 modules/*
@@ -23,3 +20,5 @@ ext/ardop1/output.map
 
 # log files
 *.log
+log/*.log
+log/*.pid

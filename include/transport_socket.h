@@ -6,6 +6,11 @@ class Socket {
       Socket(int fd);
       Socket(const char *uri);
       ~Socket();
+      // sending binary data
+      bool Send(void *data, size_t data_sz);
+      // sending text data with a \n line termination
+      bool Send(const char *msg, ...);
+      bool vSend(const char *msg, va_list *ap);
       int fd;
       int port;
       char host[HOST_NAME_MAX+1];

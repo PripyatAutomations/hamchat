@@ -15,24 +15,30 @@ Building
 --------
 - If needed, install dependancies
 	sudo make build-deps
+
 - Build it
 	make world
+
 - Configure it
 	$EDITOR etc/hamchat.cf
+
 - Run it
-	./hamchat
+	make start
+
 - Connect to it from your irc client
 	/connect localhost 6660
+
 - Debug it
 	make gdb
 
+- Stop it
+	make stop
 
 SIGNALS
 -------
 	SIGHUP	- Reload configuration
 	SIGUSR1	- Dump database to disk
 	SIGUSR2	- Dump statistics to disk
-
 
 BUGS
 -----
