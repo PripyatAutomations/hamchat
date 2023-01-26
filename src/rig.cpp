@@ -4,7 +4,7 @@
 Rig *rigs[MAX_RIGS];
 const int max_rigs = MAX_RIGS;
 
-struct rig_driver_name rig_driver_names[] {
+struct rig_driver_name rig_driver_names[] = {
   { RIG_DRIVER_NONE, 		"NONE" },
   { RIG_DRIVER_HAMLIB,		"hamlib" },
   { RIG_DRIVER_FLRIG,		"flrig" },

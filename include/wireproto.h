@@ -10,9 +10,9 @@ struct wireproto_cmds {
    bool       (*func)(Client *cptr, int argc, char **argv);
 };
 
-extern wireproto_send(Client *cptr, int argc, char **argv);
+extern bool wireproto_send(Client *cptr, int argc, char **argv);
 
 // our 'simple' protocol, the only one for now... (wireproto_simple.cpp)
-extern struct wireproto_cmds *proto_cmds_simple;
+extern struct wireproto_cmds proto_cmds_simple[];
 
 #endif	// !defined(_wireproto_h)

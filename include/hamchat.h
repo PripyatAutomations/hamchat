@@ -40,6 +40,7 @@
 #include "modem.h"
 #include "database.h"
 #include "irc.h"
+#include "wireproto.h"
 #include "rig.h"
 #include "heartbeat.h"
 #include "modes.h"
