@@ -1,0 +1,6 @@
+[submodule "ext/soundmodem"]
+	path = ext/soundmodem
+	url = https://github.com/VK3FNG/soundmodem.git
+[submodule "ext/fldigi"]
+	path = ext/fldigi
+	url = https://github.com/w1hkj/fldigi.git

@@ -1,2 +1,2 @@
 #!/bin/bash
-apt install -y libsqlite3-dev libev-dev libhamlib-dev libhamlib++-dev
+apt install -y libsqlite3-dev libev-dev libhamlib-dev libhamlib++-dev libxmlrpc-c++8-dev xmlrpc-api-utils

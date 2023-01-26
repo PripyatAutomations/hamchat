@@ -1,18 +1,48 @@
+DEBUG=y
+############################
+# Enable optional features #
+############################
+USE_HAMLIB=y
+USE_FLDIGI=n
+USE_SOUNDMODEM=n
+
 all: world
-
-CXX = g++
-CFLAGS := -g -Wall -ansi -pedantic -I./include -std=gnu++20
-CFLAGS += -Wno-unused-function -Wno-unused-variable -Wno-format-truncation
-LDFLAGS := -lsqlite3 -lev -lhamlib
-
 bins := bin/hamchat
-#subdirs += ext/ft8_lib
-subdirs += ext/ardop1
+
 clean_files = hamchat.log
-distclean_files = hamchat.pid etc/hamchat.db etc/users/*.db etc/channels/*.db
-#hamchat_objs += audio.o
-#hamchat_objs += audio_alsa.o
-#hamchat_objs += audio_pulse.o
+distclean_files = log/hamchat.pid etc/hamchat.db etc/users/*.db etc/channels/*.db
+
+subdirs += ext/ardop1
+
+##################
+# Compiler Flags #
+##################
+CXX = g++
+CFLAGS := -I./include -std=gnu++20
+LDFLAGS := -lsqlite3 -lev
+
+# Optimization/debugging/warnings
+CFLAGS += -Wno-unused-function -Wno-unused-variable -Wno-format-truncation
+
+ifeq (${DEBUG},y)
+CFLAGS += -g -Wall -ansi -pedantic
+else
+CFLAGS += -O3
+endif
+
+# buiild time autoconfiguration, based on user selections above...
+ifeq (${USE_HAMLIB},y)
+LDFLAGS += -lhamlib 
+endif
+ifeq (${USE_FLDIGI},y)
+NEED_XMLRPC=y
+endif
+ifeq (${NEED_XMLRPC},y)
+LDFLAGS += -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_util
+endif
+
+##################################################################
+
 hamchat_objs += bot.o
 #hamchat_objs += cmdline.o
 hamchat_objs += config.o
@@ -21,12 +51,42 @@ hamchat_objs += database.o
 hamchat_objs += dict.o
 hamchat_objs += file.o
 hamchat_objs += heartbeat.o
+hamchat_objs += logger.o
+hamchat_objs += main.o
+hamchat_objs += maths.o
+#hamchat_objs += module.o
+hamchat_objs += rig.o
+#hamchat_objs += rig_flrig.o
+hamchat_objs += rig_hamlib.o
+# Provides rig controls/status in channels
+hamchat_objs += rig_irc_channel.o
+#hamchat_objs += rig_serial_ptt.o
+hamchat_objs += routing.o
+hamchat_objs += statistics.o
+hamchat_objs += strings.o
+
+#########
+# Audio #
+#########
+#hamchat_objs += audio.o
+#hamchat_objs += audio_alsa.o
+#hamchat_objs += audio_pulse.o
+
+#################
+# Spot Reporting#
+#################
+hamchat_objs += spotting.o
+hamchat_objs += spotting_db.o
+#hamchat_objs += spotting_pskreporter.o
+#hamchat_objs += spotting_rbn.o
+
+#######
+# IRC #
+#######
 hamchat_objs += irc.o
 hamchat_objs += irc_channel.o
 hamchat_objs += irc_client.o		# for handling irc clients, NOT an IRC client...
 hamchat_objs += irc_parser.o
-#hamchat_objs += list.o
-hamchat_objs += logger.o
 hamchat_objs += m_admin.o
 hamchat_objs += m_away.o
 hamchat_objs += m_cap.o
@@ -62,42 +122,41 @@ hamchat_objs += m_version.o
 hamchat_objs += m_who.o
 hamchat_objs += m_whois.o
 hamchat_objs += m_whowas.o
-hamchat_objs += main.o
-hamchat_objs += maths.o
+
+#####################
+# Transports/Modems #
+#####################
 hamchat_objs += modem.o
 hamchat_objs += modem_ardop.o
 #hamchat_objs += modem_bell103.o
 #hamchat_objs += modem_bell202.o
 #hamchat_objs += modem_js8call.o
 #hamchat_objs += modem_psk31.o
-#hamchat_objs += module.o
-hamchat_objs += rig.o
-#hamchat_objs += rig_flrig.o
-hamchat_objs += rig_hamlib.o
-# Provides rig controls/status in channels
-hamchat_objs += rig_irc_channel.o
-#hamchat_objs += rig_serial_ptt.o
-hamchat_objs += routing.o
-hamchat_objs += spotting.o
-hamchat_objs += spotting_db.o
-#hamchat_objs += spotting_pskreporter.o
-#hamchat_objs += spotting_rbn.o
-hamchat_objs += statistics.o
-hamchat_objs += strings.o
 hamchat_objs += transport.o
 hamchat_objs += transport_socket.o
 #hamchat_objs += transport_kiss.o
 hamchat_objs += transport_modem.o
+hamchat_objs += wireproto_simple.o
+ifeq (${USE_FLDIGI},y)
+hamchat_objs += modem_fldigi.o
+endif
 
+ifeq (${USE_SOUNDMODEM},y)
+hamchat_objs += modem_soundmodem.o
+endif
+
+#############################################################
+# allows us to force rebuild below, if any headers change...
+headers := $(wildcard include/*.h)
+
+# expand to full paths
 hamchat_real_objs = $(foreach x,${hamchat_objs},obj/${x})
 
 # add files to cleanup...
 clean_files += ${bins} ${hamchat_objs} ${hamchat_real_objs}
-headers := $(wildcard include/*.h)
 
 world: subdirs-all ${bins}
 
-#ARDOP_BIN := ext/ARDOPOFDM/ardopofdm
 ARDOP_BIN := ext/ardop1/ardopc
 
 bin/hamchat: ${ARDOP_BIN} ${hamchat_real_objs} GNUmakefile ${headers} etc/hamchat.db
@@ -131,19 +190,16 @@ start:
 	./bin/hamchat
 
 gdb: bin/hamchat stop
-	./scripts/launch-ardop
+#	./scripts/launch-ardop
 	gdb ./bin/hamchat -ex run
 
 stop:
-	@if [  -f hamchat.pid ]; then \
+	@if [  -f log/hamchat.pid ]; then \
 	    echo "*** killing hamchat!"; \
-	    kill -TERM $(shell cat hamchat.pid) || true; \
+	    kill -TERM $(shell cat log/hamchat.pid) || true; \
 	fi
-	kill -TERM $(shell cat ardop.pid) || true
-	${RM} hamchat.pid ardop.pid
-
-#ext/ARDOPOFDM/ardopofdm:
-#	${MAKE} -C ext/ARDOPOFDM
+	kill -TERM $(shell cat log/ardop.pid) || true
+	${RM} log/hamchat.pid log/ardop.pid
 
 ext/ardop1/ardopc:
 	${MAKE} -C ext/ardop1

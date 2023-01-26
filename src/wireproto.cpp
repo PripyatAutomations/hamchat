@@ -1,0 +1,1 @@
+wireproto_send(Client *cptr, int argc, char **argv)

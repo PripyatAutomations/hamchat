@@ -1,3 +1,4 @@
+#include <math.h>
 #include "hamchat.h"
 Heartbeat *heartbeat = NULL;
 
@@ -26,6 +27,10 @@ Heartbeat::~Heartbeat() {
 
 #define	MIN_BUF_SZ	80
 
+static double round_pwr(const double &value, const double& rounding)  {
+    return rounding!=0 ? floor(value/rounding + 0.5)*rounding : value;
+}
+
 bool Heartbeat::SerializePacket(heartbeat_pkt_t *pkt, char *buf, size_t bufsz) {
    if (pkt == NULL || buf == NULL || bufsz < MIN_BUF_SZ) {
       Log->Send(LOG_CRIT, "%s: invalid arguments pkt <%x> buf <%x> bufsz %lu", __FUNCTION__, pkt, buf, bufsz); 
@@ -34,8 +39,8 @@ bool Heartbeat::SerializePacket(heartbeat_pkt_t *pkt, char *buf, size_t bufsz) {
    
    memset(buf, 0, bufsz);
 
-   snprintf(buf, bufsz, "HB %s %s@%.03f %lu\n", pkt->tx_call, pkt->tx_grid, pkt->tx_power, pkt->tx_time);
-//   Log->Send(LOG_DEBUG, "HeartBeatPacketSerialized: %s", buf);
+   snprintf(buf, bufsz, "HB %s %s@%.3g %lu", pkt->tx_call, pkt->tx_grid, round_pwr(pkt->tx_power, 0.001), pkt->tx_time);
+   Log->Send(LOG_DEBUG, "HeartBeatPacketSerialized: %s", buf);
    return true;
 }
 
@@ -59,7 +64,7 @@ bool Heartbeat::Send(Rig *rig) {
    hb = this->CreatePacket(NULL, rig);
 
    if (this->SerializePacket(hb, buf, sizeof(buf)) == true) {
-      Log->Send(LOG_DEBUG, "Sending heartbeat: %s...", buf);
+      Log->Send(LOG_DEBUG, "Sending heartbeat: %s", buf);
    } else {
       Log->Send(LOG_CRIT, "Heartbeat::SerializePacket() returned false, not sending...");
    }

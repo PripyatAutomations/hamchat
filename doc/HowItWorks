@@ -1,0 +1,72 @@
+Wire protocols are transported either via transport_*.
+The wire (air) protocol messages are sent via a transport.
+RF - transport_modem or maybe someday transport_kiss (serial TNC).
+IP - transport_socket for tcp or udp
+
+
+Description of source bits:
+
+Core		These bits provide core support crud
+----
+    cmdline.cpp			Command line parser
+    config.cpp			Configuration file
+    daemon.cpp			posix stuff for daemonization
+    database.cpp		sqlite3 database
+    dict.cpp			dictionary class implementation
+    file.cpp			file handling crud
+    logger.cpp			log message handling
+    main.cpp			core
+    maths.cpp			math bits
+    module.cpp			Loadable modules support
+    statistics.cpp		statistics recording and dumping
+    strings.cpp			string stuff
+
+IRC Server	Provides the local client interface (ircd)
+----------
+    bot.cpp			Bot (!command) features
+    irc_channel.cpp		Channel support
+    irc_client.cpp		Client handling
+    irc.cpp			IRC core
+    irc_parser.cpp		Main IRC parser
+    m_*.cpp			IRC commands
+    rig_irc_channel.cpp		Control/status in an irc channel
+
+Audio Handling	Someday will provide ways to capture audio for modems
+--------------
+    audio_alsa.cpp		ALSA sound support
+    audio.cpp			Sound core
+    audio_pulse.cpp		Pulse Audio/Pipewire
+
+Air/Wire Protocol
+-----------------
+    filexfer.cpp		File transfers
+    heartbeat.cpp		Heartbeat messages
+    modem_ardop.cpp		Support for using ARDOP softmodems
+    modem_bell103.cpp		NYI: Bell.103 soft modem
+    modem_bell202.cpp		NYI: Bell.202 soft modem
+    modem.cpp			Support for wrapping modem drivers
+    modem_fldigi.cpp		NYI: Support for fldigi XML-RPC
+    modem_ft8.cpp		NYI: Support for ft8 decoding with ft8lib
+    modem_js8call.cpp		NYI: Support for using the 'js8' binary
+    modem_psk31.cpp		NYI: PSK31 softmodem (may never happen if flrig does)
+    modem_soundmodem.cpp	NYI: Support for soundmodem program's softmodems
+    routing.cpp			NYI: Support for routing messages
+    transport.cpp		Transport wrapper
+    transport_kiss.cpp		NYI: someday may be support for serial KISS TNCs
+    transport_modem.cpp		Support for modem_* drivers
+    transport_socket.cpp	IP transport (UDP/TCP)
+    wireproto.cpp		Wire (air) protocol wrapper for inter-site linking
+    wireproto_simple.cpp	"Simple" protocol is our only protocol for linking
+
+Rig Control	Rig control (PTT/frequency/mode/etc)
+-----------
+    rig.cpp			Core interface
+    rig_flrig.cpp		NYI: flrig xml-rpc control
+    rig_hamlib.cpp		Hamlib interface (see hamchat.cf)
+    rig_serial_ptt.cpp		NYI: serial PTT (DTR/CTS pin)
+
+Spotting	Someday this will report to spotting networks
+--------
+    spotting.cpp		Spotting wrapper
+    spotting_db.cpp		Spotting to local database
+    spotting_pskreporter.cpp	Reporting to pskreporter

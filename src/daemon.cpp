@@ -78,8 +78,8 @@ void shutdown(void) {
 }
 
 void shutdown(int status) {
-   shutdown();
    Log->Send(LOG_CRIT, "shutting down: %d", status);
+   dump_statistics(cfg->Get("path.statsfile", NULL));
    exit(status);
 }
 

@@ -119,6 +119,8 @@ class Modem_ARDOP {
       // Get Modulation Type
       ardop_mode_t GetModulationMode(void);
       const char *GetModulationModeName(void);
+      // initialize the modem
+      bool Init(void);
       ////////////////////////////////////////////////
       // interfaces to the software modem (ardop1c) //
       ////////////////////////////////////////////////

@@ -1,6 +1,8 @@
 #if	!defined(_modem_h)
 #define	_modem_h
 #include "modem_ardop.h"
+#include "modem_fldigi.h"
+
 extern bool init_modem_thread(void);
 
 enum modem_type_t {

@@ -119,6 +119,8 @@ bool Modem_ARDOP::Connect(void) {
       return false;
    }
 
+   // send initalization
+   this->Init();
    return false;
 }
 
@@ -160,6 +162,8 @@ bool Modem_ARDOP::TNC_Poll(int channel) {
 bool start_ardop_modem(void) {
    pid_t childpid;
    int status;
+// XXX: Figure out if it's running already...
+// execute the ardop modem
 #if	0
    char *args[2] = { "ardopc", NULL };
 
@@ -188,4 +192,51 @@ bool start_ardop_modem(void) {
    Log->Send(LOG_INFO, "ardop modem as pid %d", childpid);
 #endif
    return true;
+}
+
+bool Modem_ARDOP::Init(void) {
+   const char *call = cfg->Get("station.callsign", NULL);
+   const char *grid = cfg->Get("station.gridsquare", NULL);
+   bool fecid = cfg->GetBool("ardop.use_fecid", true);
+   int fecrepeats = cfg->GetInt("ardop.fec_repeats", 3);
+   int squelch = cfg->GetInt("ardop.squelch", 5);
+   int busydet = cfg->GetInt("ardop.busydet", 5);
+   int leader = cfg->GetInt("ardop.leader", 240);
+   int trailer = cfg->GetInt("ardop.trailer", 10);
+   bool pingack = cfg->GetBool("ardop.pingack", true);
+   int arqtimeout = cfg->GetInt("ardop.arqtimeout", 120);
+   bool a_listen = cfg->GetBool("ardop.listen", true);
+
+   // XXX: These need to come from the user not the station
+   if (call == NULL) {
+      Log->Send(LOG_CRIT, "Modem::ARDOP::Init called without station.callsign set");
+      shutdown();
+   }
+
+   if (grid == NULL) {
+      Log->Send(LOG_CRIT, "Modem_ARDOP::Init called without station.gridsquare set");
+      shutdown();
+   }
+
+   // send the initialization commands...
+   this->sock_cmd->Send("INITIALIZE\r\n");
+   this->sock_cmd->Send("MYCALL %s\r\n", call);
+   this->sock_cmd->Send("GRIDSQUARE %s\r\n", grid);
+   this->sock_cmd->Send("FECID %s\r\n", (fecid ? "TRUE" : "FALSE"));
+   this->sock_cmd->Send("FECREPEATS %d\r\n", fecrepeats);
+   this->sock_cmd->Send("SQUELCH %d\r\n", squelch);
+   this->sock_cmd->Send("BUSYDET %d\r\n", busydet);
+   this->sock_cmd->Send("LEADER %d\r\n", leader);
+   this->sock_cmd->Send("TRAILER %d\r\n", trailer);
+   this->sock_cmd->Send("ENABLEPINGACK %s\r\n", (pingack ? "TRUE" : "FALSE"));
+   this->sock_cmd->Send("ARQTIMEOUT %d\r\n", arqtimeout);
+   this->sock_cmd->Send("LISTEN %s\r\n", (a_listen ? "TRUE" : "FALSE"));
+   this->sock_cmd->Send("PROTOCOLMODE FEC\r\n");
+   this->sock_cmd->Send("AUTOBREAK TRUE\r\n");
+   this->sock_cmd->Send("MONITOR TRUE\r\n");
+   this->sock_cmd->Send("CWID FALSE\r\n");
+   this->sock_cmd->Send("VERSION\r\n");
+   this->sock_cmd->Send("STATE\r\n");
+
+   return false;
 }

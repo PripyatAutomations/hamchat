@@ -116,7 +116,7 @@ Socket::Socket(int fd) {
    } else {
       // create an empty socket, for Connect() call later
    }
-};
+}
 
 Socket::Socket(const char *uri) {
    int fd;

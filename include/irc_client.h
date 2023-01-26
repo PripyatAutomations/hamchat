@@ -19,7 +19,7 @@ enum irc_cli_type {
    CLI_TYPE_NONE = 0,
    CLI_TYPE_LOCAL,		// real, local user
    CLI_TYPE_REMOTE,		// remote user struct
-   CLI_TYPE_SYSTEM,		// builtin 'bot' user
+   CLI_TYPE_SYSTEM		// builtin 'bot' user
 };
 typedef enum irc_cli_type irc_cli_type_t;
 
